@@ -1,0 +1,2 @@
+class NoActiveStoryError(FileNotFoundError):
+    pass
