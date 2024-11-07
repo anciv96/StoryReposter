@@ -48,11 +48,12 @@ async def start_tagging_process(message: Message, donor_account):
     sessions = await AccountService.get_all_accounts()
     if len(sessions) == 0:
         await message.answer('Нет активных пользователей.')
+        return
     try:
         pass
-        # service = DownloadStoryService()
-        # await clear_directory(LAST_STORY_CONTENT_DIR)
-        # await service.download_last_story(donor_account, sessions[0])
+        service = DownloadStoryService()
+        await clear_directory(LAST_STORY_CONTENT_DIR)
+        await service.download_last_story(donor_account, sessions[0])
     except NoActiveStoryError:
         await message.answer('У пользователя нет активных историй.')
         return

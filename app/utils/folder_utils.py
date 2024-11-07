@@ -36,13 +36,16 @@ async def download_file(message: Message, upload_dir: str) -> str:
 
 
 async def get_txt_file_path(directory: str) -> str:
-    txt_file = next((f for f in os.listdir(directory) if f.endswith('.txt')), None)
-    if not txt_file:
-        logger.error("Не найден файл с расширением .txt в указанной директории.")
-        return ''
+    try:
+        txt_file = next((f for f in os.listdir(directory) if f.endswith('.txt')), None)
+        if not txt_file:
+            logger.error("Не найден файл с расширением .txt в указанной директории.")
+            return ''
 
-    file_path = os.path.join(directory, txt_file)
-    return file_path
+        file_path = os.path.join(directory, txt_file)
+        return file_path
+    except Exception as error:
+        logger.error(error)
 
 
 async def get_usernames(directory: str) -> list[str]:
