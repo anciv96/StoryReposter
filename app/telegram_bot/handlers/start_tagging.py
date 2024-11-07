@@ -11,6 +11,7 @@ from app.backend.schemas.account import Account
 from app.backend.services.account_service import AccountService
 from app.backend.services.story_services.download_story_service import DownloadStoryService
 from app.backend.services.story_services.post_story_service import PostStoryService
+from app.exceptions.account_exceptions import NotAuthenticatedError
 from app.exceptions.story_exceptions import NoActiveStoryError
 from app.telegram_bot.filters.admin_filter import IsAdminFilter
 from app.telegram_bot.states.start_tagging_state import StartTaggingState
@@ -50,7 +51,6 @@ async def start_tagging_process(message: Message, donor_account):
         await message.answer('Нет активных пользователей.')
         return
     try:
-        pass
         service = DownloadStoryService()
         await clear_directory(LAST_STORY_CONTENT_DIR)
         await service.download_last_story(donor_account, sessions[0])
@@ -59,6 +59,9 @@ async def start_tagging_process(message: Message, donor_account):
         return
     except ValueError:
         await message.answer(f'Пользователь {donor_account} не найден')
+        return
+    except NotAuthenticatedError:
+        await message.answer(f'{sessions[0].phone} запрашивает код подтверждения')
         return
 
     await message.reply(f"Аккаунт-донор успешно добавлен: {donor_account}")

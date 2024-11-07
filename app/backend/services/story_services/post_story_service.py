@@ -1,14 +1,13 @@
-from app.backend.services.story_services.story_service import StoryService
-
 import asyncio
 from itertools import islice
 
+from telethon import TelegramClient, functions, types
 from telethon.errors import FloodWaitError
 
 from app import logger_setup
 from app.backend.schemas.account import Account
+from app.backend.services.story_services.story_service import StoryService
 from config.config import ConfigManager
-
 
 logger = logger_setup.get_logger(__name__)
 
@@ -20,8 +19,6 @@ class PostStoryService(StoryService):
     Реализует функции для публикации сторис на загруженных аккаунтах и добавления
     отметок в соответствии с заданными параметрами.
     """
-    from itertools import islice
-
     async def post_story_with_tags(self, client: Account, story, tags: list[str], proxy=None):
         """
         Publishes a story on an account and tags users in batches with a delay between each batch.
@@ -30,7 +27,6 @@ class PostStoryService(StoryService):
         :param story: The story content
         :param tags: List of users to tag
         :param proxy: Proxy to prevent bans
-        :param batch_size: Number of users to tag per batch
         """
         batch_size = await ConfigManager.get_setting('tags_per_story')
 
@@ -64,25 +60,39 @@ class PostStoryService(StoryService):
         description = ' '.join(users_to_mention)
         return description
 
-    async def _post_story(self, account: Account, story, caption, proxy=None):
-        """session_path = f'{SESSIONS_UPLOAD_DIR}/{account.session_file}/{account.session_file}.session'
+    async def _post_story(self, account: Account, story, caption, proxy=None) -> None:
+        client = TelegramClient(account.session_file, account.app_id, account.app_hash)
+        await client.connect()
+        if await client.is_user_authorized():
+            await client.disconnect()
+            async with TelegramClient(
+                account.session_file,
+                account.app_id,
+                account.app_hash,
+                device_model='Iphone 12 pro max',
+                proxy=proxy
+            ) as client:
+                try:
+                    await client(functions.stories.SendStoryRequest(
+                        peer=await client.get_me(),
+                        media=types.InputMediaUploadedPhoto(
+                            file=await client.upload_file(story)
+                        ),
+                        privacy_rules=[types.InputPrivacyValueAllowContacts()],
+                        caption=caption,
+                        period=await ConfigManager.get_setting('story_period')
 
-        async with TelegramClient(
-            session_path,
-            account.app_id,
-            account.app_hash,
-            device_model='Iphone 12 pro max',
-            proxy=proxy
-        ) as client:
-
-            await client(functions.stories.SendStoryRequest(
-                peer=await client.get_me(),
-                media=types.InputMediaUploadedPhoto(
-                    file=await client.upload_file(story)
-                ),
-                privacy_rules=[types.InputPrivacyValueAllowContacts()],
-                caption=caption,
-                period=STORY_PERIOD
-
-            ))"""
-        print(f'{account.phone} -> tagged {caption} -> with proxy {proxy}')
+                    ))
+                    logger.error(f'Отмечено {caption} аккаунтом {account.phone}')
+                except Exception:
+                    await client(functions.stories.SendStoryRequest(
+                        peer=await client.get_me(),
+                        media=types.InputMediaUploadedPhoto(
+                            file=await client.upload_file(story)
+                        ),
+                        privacy_rules=[types.InputPrivacyValueAllowContacts()],
+                        caption=caption,
+                    ))
+                    logger.error(f'Отмечено {caption} аккаунтом {account.phone}')
+        else:
+            logger.error(f'{account.phone} запрашивает код подтверждения')

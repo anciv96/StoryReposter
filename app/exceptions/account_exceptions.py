@@ -4,3 +4,7 @@ class ProxyIsNotValidError(TypeError):
 
 class PhoneNumberIsNotValidError(TypeError):
     pass
+
+
+class NotAuthenticatedError(PermissionError):
+    pass

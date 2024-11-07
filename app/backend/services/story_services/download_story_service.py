@@ -7,6 +7,7 @@ from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
 from app import logger_setup
 from app.backend.schemas.account import Account
 from app.backend.services.story_services.story_service import StoryService
+from app.exceptions.account_exceptions import NotAuthenticatedError
 from app.exceptions.story_exceptions import NoActiveStoryError
 from config.config import SESSIONS_UPLOAD_DIR, LAST_STORY_CONTENT_DIR
 
@@ -24,28 +25,33 @@ class DownloadStoryService(StoryService):
         :return: A tuple containing the path to the downloaded media and the type ('photo' or 'video').
         :raises NoActiveStoryError: If there are no active stories.
         """
-        async with TelegramClient(account.session_file, account.app_id, account.app_hash) as client:
-            target_entity = await client.get_entity(target_account)
-            peer_stories = await client(GetPeerStoriesRequest(peer=target_entity))
-            print(peer_stories)
+        client = TelegramClient(account.session_file, account.app_id, account.app_hash)
+        await client.connect()
+        if await client.is_user_authorized():
+            await client.disconnect()
+            async with TelegramClient(account.session_file, account.app_id, account.app_hash) as client:
+                target_entity = await client.get_entity(target_account)
+                peer_stories = await client(GetPeerStoriesRequest(peer=target_entity))
 
-            if not peer_stories.stories:
-                raise NoActiveStoryError("No active stories found for the target account.")
+                if not peer_stories.stories:
+                    raise NoActiveStoryError("No active stories found for the target account.")
 
-            last_story = peer_stories.stories.stories[-1]
-            media = last_story.media
+                last_story = peer_stories.stories.stories[-1]
+                media = last_story.media
 
-            if isinstance(media, MessageMediaPhoto):
-                media_path = self._generate_media_path(target_account, 'jpg')
-                media_type = 'photo'
-            elif isinstance(media, MessageMediaDocument):
-                media_path = self._generate_media_path(target_account, 'mp4')
-                media_type = 'video'
-            else:
-                raise TypeError("Unsupported media type in story.")
+                if isinstance(media, MessageMediaPhoto):
+                    media_path = self._generate_media_path(target_account, 'jpg')
+                    media_type = 'photo'
+                elif isinstance(media, MessageMediaDocument):
+                    media_path = self._generate_media_path(target_account, 'mp4')
+                    media_type = 'video'
+                else:
+                    raise TypeError("Unsupported media type in story.")
 
-            await client.download_media(media, media_path)
-            return media_path, media_type
+                await client.download_media(media, media_path)
+                return media_path, media_type
+        else:
+            raise NotAuthenticatedError()
 
     def _generate_media_path(self, account_name: str, extension: str) -> str:
         """

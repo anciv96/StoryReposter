@@ -6,6 +6,6 @@
     ],
     "items_per_page": 2,
     "story_period": 48,
-    "posting_delay": 5,
-    "tags_per_story": 2
+    "posting_delay": 10,
+    "tags_per_story": 3
 }
