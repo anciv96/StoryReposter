@@ -39,10 +39,5 @@ async def main():
     await dp.start_polling(bot)
 
 
-@dp.error()
-async def error_handler(event: ErrorEvent):
-    logger.error("Ошибка: %s", event.exception)
-
-
 if __name__ == '__main__':
     asyncio.run(main())

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import aiofiles
 import python_socks
@@ -31,7 +31,7 @@ async def convert_proxy(proxy_input: str) -> dict[str, Any]:
         raise ProxyIsNotValidError("Invalid proxy format. Expected format: socks5:host:port:login:password.")
 
 
-async def parse_proxy() -> list[dict[str, Any]]:
+async def parse_proxy() -> Optional[list[dict[str, Any]]]:
     file_path = await get_txt_file_path(PROXIES_UPLOAD_DIR)
 
     async with aiofiles.open(file_path, mode='r') as file:

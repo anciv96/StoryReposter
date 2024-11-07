@@ -84,20 +84,21 @@ async def post_stories_for_all_sessions(sessions: list[Account]) -> None:
         ]
 
         await asyncio.gather(*tasks)
+    except FileNotFoundError:
+        logger.error('Файл с юзернеймами не найден')
     except Exception as error:
         logger.error(error)
 
 
 async def _get_proxy_group(sessions) -> Optional[list[dict[str, Any]]]:
-    proxies = await parse_proxy()
-
-    proxy_count = len(proxies)
-    session_count = len(sessions)
-
     try:
+        proxies = await parse_proxy()
+
+        proxy_count = len(proxies)
+        session_count = len(sessions)
         proxy_groups = [proxies[i % proxy_count] for i in range(session_count)]
         return proxy_groups
-    except ZeroDivisionError:
+    except (TypeError, ZeroDivisionError, FileNotFoundError):
         return None
     except Exception as error:
         logger.error(error)

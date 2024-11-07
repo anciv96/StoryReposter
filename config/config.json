@@ -1,5 +1,5 @@
 {
-    "turned_on": false,
+    "turned_on": true,
     "admins_ids": [
         123,
         5432
@@ -7,5 +7,5 @@
     "items_per_page": 2,
     "story_period": 48,
     "posting_delay": 5,
-    "tags_per_story": 3
+    "tags_per_story": 2
 }

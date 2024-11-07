@@ -35,17 +35,13 @@ async def download_file(message: Message, upload_dir: str) -> str:
     return file_path
 
 
-async def get_txt_file_path(directory: str) -> str:
-    try:
-        txt_file = next((f for f in os.listdir(directory) if f.endswith('.txt')), None)
-        if not txt_file:
-            logger.error("Не найден файл с расширением .txt в указанной директории.")
-            return ''
+async def get_txt_file_path(directory: str) -> Optional[str]:
+    txt_file = next((f for f in os.listdir(directory) if f.endswith('.txt')), None)
+    if not txt_file:
+        raise FileNotFoundError('Txt file not found')
 
-        file_path = os.path.join(directory, txt_file)
-        return file_path
-    except Exception as error:
-        logger.error(error)
+    file_path = os.path.join(directory, txt_file)
+    return file_path
 
 
 async def get_usernames(directory: str) -> list[str]:
@@ -59,7 +55,10 @@ async def get_usernames(directory: str) -> list[str]:
     Returns:
         List[str]: A list of usernames (e.g., ['@username1', '@username2']) or an empty list if no valid file is found.
     """
-    file_path = await get_txt_file_path(directory)
+    try:
+        file_path = await get_txt_file_path(directory)
+    except FileNotFoundError:
+        raise FileNotFoundError
 
     try:
         with open(file_path, 'r', encoding='utf-8') as file:

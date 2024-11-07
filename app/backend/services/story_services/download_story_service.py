@@ -24,16 +24,15 @@ class DownloadStoryService(StoryService):
         :return: A tuple containing the path to the downloaded media and the type ('photo' or 'video').
         :raises NoActiveStoryError: If there are no active stories.
         """
-        session_path = os.path.join(SESSIONS_UPLOAD_DIR, account.session_file, f"{account.session_file}.session")
-
-        async with TelegramClient(session_path, account.app_id, account.app_hash) as client:
+        async with TelegramClient(account.session_file, account.app_id, account.app_hash) as client:
             target_entity = await client.get_entity(target_account)
-            stories = await client(GetPeerStoriesRequest(peer=target_entity))
+            peer_stories = await client(GetPeerStoriesRequest(peer=target_entity))
+            print(peer_stories)
 
-            if not stories.stories:
+            if not peer_stories.stories:
                 raise NoActiveStoryError("No active stories found for the target account.")
 
-            last_story = stories.stories[-1]
+            last_story = peer_stories.stories.stories[-1]
             media = last_story.media
 
             if isinstance(media, MessageMediaPhoto):
