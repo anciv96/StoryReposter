@@ -46,7 +46,8 @@ async def set_donor_account(message: Message, state: FSMContext):
 async def start_tagging_process(message: Message, donor_account):
     await AccountService.clear_cache()
     sessions = await AccountService.get_all_accounts()
-
+    if len(sessions) == 0:
+        await message.answer('Нет активных пользователей.')
     try:
         pass
         # service = DownloadStoryService()
@@ -56,7 +57,7 @@ async def start_tagging_process(message: Message, donor_account):
         await message.answer('У пользователя нет активных историй.')
         return
     except ValueError:
-        await message.answer(f'Пользователь {donor_account} не найдекн')
+        await message.answer(f'Пользователь {donor_account} не найден')
         return
 
     await message.reply(f"Аккаунт-донор успешно добавлен: {donor_account}")
