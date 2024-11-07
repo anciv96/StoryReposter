@@ -41,5 +41,5 @@ SESSIONS_UPLOAD_DIR = 'content/accounts'
 PROXIES_UPLOAD_DIR = 'content/proxies'
 USERNAMES_LIST_DIR = 'content/usernames_list'
 LAST_STORY_CONTENT_DIR = 'content/stories'
-OWNER = getenv("BOT_TOKEN")
+OWNER = int(getenv("OWNER"))
 TOKEN = getenv("BOT_TOKEN")

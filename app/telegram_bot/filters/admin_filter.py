@@ -10,7 +10,7 @@ class IsAdminFilter(Filter):
 
     async def __call__(self, message: Message) -> bool:
         admins: list = await ConfigManager.get_setting('admins_ids')
-        admins.extend(OWNER)
+        admins.append(OWNER)
         if self.is_admin:
             return message.from_user.id in admins
         else:

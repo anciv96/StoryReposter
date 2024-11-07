@@ -20,3 +20,5 @@ content/usernames_list/*
 !content/proxies/.gitkeep
 !content/stories/.gitkeep
 !content/usernames_list/.gitkeep
+
+!requirements.txt
