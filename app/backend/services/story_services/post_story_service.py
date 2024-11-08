@@ -50,6 +50,7 @@ class PostStoryService(StoryService):
             logger.error(f"Flood wait error: {e}")
             await asyncio.sleep(e.seconds)
         except Exception as e:
+            await ConfigManager.set_setting('turned_on', False)
             logger.error(f"Неизвестная ошибка: {e}")
 
     def _chunked_tags(self, tags: list[str], batch_size: int) -> list[list[str]]:
@@ -70,6 +71,7 @@ class PostStoryService(StoryService):
             return
 
         try:
+            print(account)
             await client(functions.stories.SendStoryRequest(
                 peer=await client.get_me(),
                 media=types.InputMediaUploadedPhoto(

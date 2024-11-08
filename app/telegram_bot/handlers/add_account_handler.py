@@ -5,7 +5,6 @@ from aiogram import Router, F
 from aiogram.filters import Command, or_f, and_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
-from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
 
 from app import logger_setup
@@ -101,15 +100,17 @@ async def _get_client(message: Message, state: FSMContext) -> Optional[tuple[Any
     except ValueError:
         logger.error('Ошибка: app_id должен быть целым числом')
         await state.clear()
+        await client.disconnect()
         return
-
     except PhoneNumberIsNotValidError:
         logger.error('Номер не найден')
         await state.clear()
+        await client.disconnect()
         return
     except Exception as error:
         logger.error(f'Ошибка: что-то пошло не так: {error}')
         await state.clear()
+        await client.disconnect()
         return
 
 
@@ -128,13 +129,14 @@ async def process_code(message: Message, state: FSMContext):
     """
     user_data = await state.get_data()
     code = message.text.replace(' ', '')
-
+    client = user_data['client']
     try:
-        await AccountService.sign_in(client=user_data['client'],
+        await AccountService.sign_in(client=client,
                                      phone=user_data['phone'],
                                      code=code,
                                      phone_code_hash=user_data['phone_code_hash'])
         await message.answer("Аккаунт успешно добавлен!", reply_markup=menu_kb)
+        await client.disconnect()
         await state.clear()
 
     except SessionPasswordNeededError:
@@ -149,10 +151,12 @@ async def process_two_fa_password(message: Message, state: FSMContext):
     """
     user_data = await state.get_data()
     password = message.text
+    client = user_data['client']
     try:
-        await AccountService.sign_in_with_password(client=user_data['client'], password=password)
+        await AccountService.sign_in_with_password(client, password=password)
         await message.answer("Аккаунт успешно добавлен!", reply_markup=menu_kb)
     except Exception as e:
         logger.error(f"Ошибка при входе: {e}")
     finally:
+        await client.disconnect()
         await state.clear()
