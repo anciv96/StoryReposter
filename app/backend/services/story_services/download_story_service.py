@@ -28,9 +28,9 @@ class DownloadStoryService(StoryService):
         client = TelegramClient(account.session_file, account.app_id, account.app_hash, system_version="IOS 14",
                                 device_model="iPhone 14")
         await client.connect()
+
         if await client.is_user_authorized():
             try:
-                # async with TelegramClient(account.session_file, account.app_id, account.app_hash) as client:
                 target_entity = await client.get_entity(target_account)
                 peer_stories = await client(GetPeerStoriesRequest(peer=target_entity))
 

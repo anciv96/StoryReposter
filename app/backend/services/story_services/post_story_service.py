@@ -43,7 +43,6 @@ class PostStoryService(StoryService):
 
     async def _post_story_with_batch(self, client: Account, story, batch: list[str], proxy=None):
         try:
-            print(client, proxy)
             caption = await self._get_description(users_to_mention=batch)
             await self._post_story(client, story, caption, proxy)
         except FloodWaitError as e:
@@ -71,7 +70,6 @@ class PostStoryService(StoryService):
             return
 
         try:
-            print(account)
             await client(functions.stories.SendStoryRequest(
                 peer=await client.get_me(),
                 media=types.InputMediaUploadedPhoto(
@@ -95,4 +93,5 @@ class PostStoryService(StoryService):
             logger.error(f'Отмечено {caption} аккаунтом {account.phone} (прокси: {proxy})')
         finally:
             await client.disconnect()
+            await asyncio.sleep(5)
 
