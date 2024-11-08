@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-
+from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from config.config import OWNER, ConfigManager
 from config.dispatcher import bot
 
@@ -16,7 +16,8 @@ class TelegramHandler(logging.Handler):
         await bot.send_message(chat_id=OWNER, text=log_entry, parse_mode=None)
         for admin in admins:
             try:
-                await bot.send_message(chat_id=admin, text=log_entry, parse_mode=None)
+                await bot.send_message(chat_id=admin, text=log_entry, parse_mode=None,
+                                       reply_markup=menu_kb)
             except Exception:
                 continue
 

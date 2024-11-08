@@ -25,11 +25,12 @@ class DownloadStoryService(StoryService):
         :return: A tuple containing the path to the downloaded media and the type ('photo' or 'video').
         :raises NoActiveStoryError: If there are no active stories.
         """
-        client = TelegramClient(account.session_file, account.app_id, account.app_hash)
+        client = TelegramClient(account.session_file, account.app_id, account.app_hash, system_version="IOS 14",
+                                device_model="iPhone 14")
         await client.connect()
         if await client.is_user_authorized():
-            await client.disconnect()
-            async with TelegramClient(account.session_file, account.app_id, account.app_hash) as client:
+            try:
+                # async with TelegramClient(account.session_file, account.app_id, account.app_hash) as client:
                 target_entity = await client.get_entity(target_account)
                 peer_stories = await client(GetPeerStoriesRequest(peer=target_entity))
 
@@ -49,7 +50,14 @@ class DownloadStoryService(StoryService):
                     raise TypeError("Unsupported media type in story.")
 
                 await client.download_media(media, media_path)
+
                 return media_path, media_type
+            except Exception as error:
+                logger.error(error)
+            finally:
+                await client.disconnect()
+
+
         else:
             raise NotAuthenticatedError()
 

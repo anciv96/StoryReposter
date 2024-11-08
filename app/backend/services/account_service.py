@@ -20,15 +20,12 @@ logger = logger_setup.get_logger(__name__)
 class AccountService:
 
     @staticmethod
-    async def create_client(phone: str, app_id: int, app_hash: str, proxy_input: str = None) -> tuple:
+    async def create_client(phone: str, app_id: int, app_hash: str) -> tuple:
         """
         Initializes and connects a Telegram client.
         Returns the client and the phone code hash required for authorization.
         """
         try:
-            if proxy_input is not None:
-                await add_proxy(proxy_input)
-
             session_path = await AccountService._get_session_path(phone)
             client = TelegramClient(session_path, app_id, app_hash)
 

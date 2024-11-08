@@ -4,6 +4,7 @@ from aiogram.types import Message, ReplyKeyboardRemove
 
 from app import logger_setup
 from app.telegram_bot.filters.admin_filter import IsAdminFilter
+from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from config.config import ConfigManager
 
 logger = logger_setup.get_logger(__name__)
@@ -23,4 +24,4 @@ async def tags_handler(message: Message) -> None:
                     f'Время нахождения сторис в профиле -  <b>{story_period}</b> часов/часа\n'
                     f'Количество отметок с одного аккаунта – <b>{tags_per_story}</b> отметок с одного аккаунта\n')
 
-    await message.answer(message_text, reply_markup=ReplyKeyboardRemove())
+    await message.answer(message_text, reply_markup=menu_kb)

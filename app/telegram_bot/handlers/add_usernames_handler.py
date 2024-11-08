@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 
 from app import logger_setup
 from app.telegram_bot.filters.admin_filter import IsAdminFilter
+from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from app.telegram_bot.states.add_usernames_list_state import AddUsernamesState
 from app.utils.folder_utils import download_file
 from config.config import USERNAMES_LIST_DIR
@@ -38,11 +39,11 @@ async def handle_usernames_file(message: Message, state: FSMContext):
     """
     await state.clear()
     if message.document is None:
-        await message.answer('Ошибка: Принимается только .txt файл.')
+        await message.answer('Ошибка: Принимается только .txt файл.', reply_markup=menu_kb)
         return
 
     if not message.document.file_name.endswith('.txt'):
-        await message.reply("Ошибка загрузки. Пожалуйста, загрузите файл с расширением .txt.")
+        await message.reply("Ошибка загрузки. Пожалуйста, загрузите файл с расширением .txt.", reply_markup=menu_kb)
         return
 
     try:
@@ -50,10 +51,12 @@ async def handle_usernames_file(message: Message, state: FSMContext):
         usernames_count = await process_usernames_file(file_path)
 
         if usernames_count > 0:
-            await message.reply(f"Список успешно загружен. Добавлено {usernames_count} пользователей для теггинга.")
+            await message.reply(f"Список успешно загружен. Добавлено {usernames_count} пользователей для теггинга.",
+                                reply_markup=menu_kb)
         else:
             await message.reply(
-                "Проверьте список пользователей. Файл должен содержать валидные @username на новой строке.")
+                "Проверьте список пользователей. Файл должен содержать валидные @username на новой строке.",
+                reply_markup=menu_kb)
     except FileNotFoundError:
         logger.error("Ошибка: не удалось найти путь к файлу.")
         await message.reply("Ошибка обработки файла. Попробуйте еще раз.")

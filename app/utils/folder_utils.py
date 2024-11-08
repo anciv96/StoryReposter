@@ -44,6 +44,18 @@ async def get_txt_file_path(directory: str) -> Optional[str]:
     return file_path
 
 
+async def get_txt_file_or_create(directory: str, filename: str) -> str:
+    txt_file = next((f for f in os.listdir(directory) if f.endswith('.txt')), None)
+
+    if not txt_file:
+        file_path = os.path.join(directory, filename)
+        with open(file_path, 'w') as file:
+            file.write('')
+        return file_path
+
+    return os.path.join(directory, txt_file)
+
+
 async def get_usernames(directory: str) -> list[str]:
     """
     Searches for a .txt file in the specified directory, reads usernames from it,

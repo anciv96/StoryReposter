@@ -5,7 +5,7 @@ import python_socks
 
 from app import logger_setup
 from app.exceptions.account_exceptions import ProxyIsNotValidError
-from app.utils.folder_utils import get_txt_file_path
+from app.utils.folder_utils import get_txt_file_path, get_txt_file_or_create
 from config.config import PROXIES_UPLOAD_DIR
 
 
@@ -28,7 +28,7 @@ async def convert_proxy(proxy_input: str) -> dict[str, Any]:
             'rdns': False,
         }
     except (IndexError, ValueError):
-        raise ProxyIsNotValidError("Invalid proxy format. Expected format: socks5:host:port:login:password.")
+        raise ProxyIsNotValidError("Неправильный формат прокси. Ожидалось host:port:login:password.")
 
 
 async def parse_proxy() -> Optional[list[dict[str, Any]]]:
@@ -54,7 +54,9 @@ async def parse_proxy() -> Optional[list[dict[str, Any]]]:
 async def add_proxy(proxy: str):
     try:
         await convert_proxy(proxy)
-        file_path = await get_txt_file_path(PROXIES_UPLOAD_DIR)
+
+        file_path = await get_txt_file_or_create(PROXIES_UPLOAD_DIR, 'proxies.txt')
+
         async with aiofiles.open(file_path, mode='a') as f:
             await f.write(f"{proxy}\n")
     except Exception as error:

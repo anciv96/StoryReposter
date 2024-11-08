@@ -8,6 +8,7 @@ from app import logger_setup
 from app.backend.schemas.account import Account
 from app.backend.services.account_service import AccountService
 from app.telegram_bot.filters.admin_filter import IsAdminFilter
+from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from app.telegram_bot.keyboards.inline.show_accounts_kb import get_accounts_keyboard, MyCallback
 from config.config import ConfigManager
 
@@ -29,7 +30,7 @@ async def command_show_accounts_handler(message: Message) -> None:
             await message.answer("Добавленные аккаунты. Чтобы удалить, нажмите на кнопку с номером",
                                  reply_markup=await get_accounts_keyboard())
         else:
-            await message.answer("Нет активных аккаунтов")
+            await message.answer("Нет активных аккаунтов", reply_markup=menu_kb)
     except Exception as error:
         logger.error(error)
 

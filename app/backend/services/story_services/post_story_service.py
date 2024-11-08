@@ -43,13 +43,14 @@ class PostStoryService(StoryService):
 
     async def _post_story_with_batch(self, client: Account, story, batch: list[str], proxy=None):
         try:
+            print(client, proxy)
             caption = await self._get_description(users_to_mention=batch)
             await self._post_story(client, story, caption, proxy)
         except FloodWaitError as e:
             logger.error(f"Flood wait error: {e}")
             await asyncio.sleep(e.seconds)
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
+            logger.error(f"Неизвестная ошибка: {e}")
 
     def _chunked_tags(self, tags: list[str], batch_size: int) -> list[list[str]]:
         iterator = iter(tags)
@@ -61,38 +62,35 @@ class PostStoryService(StoryService):
         return description
 
     async def _post_story(self, account: Account, story, caption, proxy=None) -> None:
-        client = TelegramClient(account.session_file, account.app_id, account.app_hash)
+        client = TelegramClient(account.session_file, account.app_id, account.app_hash,
+                                device_model='Iphone 12 pro max', proxy=proxy)
         await client.connect()
-        if await client.is_user_authorized():
-            await client.disconnect()
-            async with TelegramClient(
-                account.session_file,
-                account.app_id,
-                account.app_hash,
-                device_model='Iphone 12 pro max',
-                proxy=proxy
-            ) as client:
-                try:
-                    await client(functions.stories.SendStoryRequest(
-                        peer=await client.get_me(),
-                        media=types.InputMediaUploadedPhoto(
-                            file=await client.upload_file(story)
-                        ),
-                        privacy_rules=[types.InputPrivacyValueAllowContacts()],
-                        caption=caption,
-                        period=await ConfigManager.get_setting('story_period')
+        if not await client.is_user_authorized():
+            logger.error(f'{account.phone} требует код подтверждения')
+            return
 
-                    ))
-                    logger.error(f'Отмечено {caption} аккаунтом {account.phone}')
-                except Exception:
-                    await client(functions.stories.SendStoryRequest(
-                        peer=await client.get_me(),
-                        media=types.InputMediaUploadedPhoto(
-                            file=await client.upload_file(story)
-                        ),
-                        privacy_rules=[types.InputPrivacyValueAllowContacts()],
-                        caption=caption,
-                    ))
-                    logger.error(f'Отмечено {caption} аккаунтом {account.phone}')
-        else:
-            logger.error(f'{account.phone} запрашивает код подтверждения')
+        try:
+            await client(functions.stories.SendStoryRequest(
+                peer=await client.get_me(),
+                media=types.InputMediaUploadedPhoto(
+                    file=await client.upload_file(story)
+                ),
+                privacy_rules=[types.InputPrivacyValueAllowContacts()],
+                caption=caption,
+                period=await ConfigManager.get_setting('story_period')
+
+            ))
+            logger.error(f'Отмечено {caption} аккаунтом {account.phone} (прокси: {proxy})')
+        except Exception:
+            await client(functions.stories.SendStoryRequest(
+                peer=await client.get_me(),
+                media=types.InputMediaUploadedPhoto(
+                    file=await client.upload_file(story)
+                ),
+                privacy_rules=[types.InputPrivacyValueAllowContacts()],
+                caption=caption,
+            ))
+            logger.error(f'Отмечено {caption} аккаунтом {account.phone} (прокси: {proxy})')
+        finally:
+            await client.disconnect()
+

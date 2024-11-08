@@ -14,6 +14,7 @@ from app.backend.services.story_services.post_story_service import PostStoryServ
 from app.exceptions.account_exceptions import NotAuthenticatedError
 from app.exceptions.story_exceptions import NoActiveStoryError
 from app.telegram_bot.filters.admin_filter import IsAdminFilter
+from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from app.telegram_bot.states.start_tagging_state import StartTaggingState
 from app.utils.folder_utils import get_usernames, clear_directory, get_first_media_file
 from app.utils.proxy_utils import parse_proxy
@@ -50,6 +51,7 @@ async def start_tagging_process(message: Message, donor_account):
     if len(sessions) == 0:
         await message.answer('Нет активных пользователей.')
         return
+
     try:
         service = DownloadStoryService()
         await clear_directory(LAST_STORY_CONTENT_DIR)
@@ -64,9 +66,9 @@ async def start_tagging_process(message: Message, donor_account):
         await message.answer(f'{sessions[0].phone} запрашивает код подтверждения')
         return
 
-    await message.reply(f"Аккаунт-донор успешно добавлен: {donor_account}")
+    await message.reply(f"Аккаунт-донор успешно добавлен: {donor_account}",)
 
-    await message.reply("Запуск процесса теггинга...")
+    await message.reply("Запуск процесса теггинга...", reply_markup=menu_kb)
     await post_stories_for_all_sessions(sessions)
 
 

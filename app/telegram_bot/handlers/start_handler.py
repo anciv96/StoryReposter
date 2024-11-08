@@ -1,5 +1,5 @@
 from aiogram import Router
-from aiogram.filters import CommandStart, and_f
+from aiogram.filters import CommandStart, and_f, or_f, Command
 from aiogram.types import Message
 
 from app.telegram_bot.filters.admin_filter import IsAdminFilter
@@ -8,7 +8,7 @@ from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 start_router = Router(name=__name__)
 
 
-@start_router.message(and_f(CommandStart(), IsAdminFilter(True)))
+@start_router.message(and_f(or_f(CommandStart(), Command('menu')), IsAdminFilter(True)))
 async def command_start_handler(message: Message) -> None:
     """
     This handler receives messages with `/start` command

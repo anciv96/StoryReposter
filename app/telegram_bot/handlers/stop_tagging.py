@@ -4,6 +4,7 @@ from aiogram.types import Message
 
 from app import logger_setup
 from app.telegram_bot.filters.admin_filter import IsAdminFilter
+from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from config.config import ConfigManager
 
 stop_tagging_router = Router(name=__name__)
@@ -18,4 +19,4 @@ logger = logger_setup.get_logger(__name__)
 ))
 async def stop_tagging_handler(message: Message):
     await ConfigManager.set_setting('turned_on', False)
-    await message.reply("Работа теггинга успешно остановлена")
+    await message.reply("Работа теггинга успешно остановлена", reply_markup=menu_kb)

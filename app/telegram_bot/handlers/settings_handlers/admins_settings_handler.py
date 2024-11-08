@@ -5,6 +5,7 @@ from aiogram.types import Message, ReplyKeyboardRemove
 
 from app import logger_setup
 from app.telegram_bot.filters.admin_filter import IsAdminFilter
+from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from app.telegram_bot.keyboards.default.settings_keyboard import cancel_kb
 from app.telegram_bot.states.settings_state import AdminsListState
 from config.config import ConfigManager, OWNER
@@ -45,13 +46,13 @@ async def change_admins_list_handler(message: Message, state: FSMContext) -> Non
 async def get_period_handler(message: Message, state: FSMContext) -> None:
     await state.clear()
     if message.text == 'Отмена':
-        await message.answer('Отмена действия.')
+        await message.answer('Отмена действия.', reply_markup=menu_kb)
 
     else:
         admins = [int(admin) for admin in message.text.split(' ')]
         await ConfigManager.set_setting(key='admins_ids', value=admins)
         await message.answer(f'Админы сохранены!',
-                             reply_markup=ReplyKeyboardRemove())
+                             reply_markup=menu_kb)
 
 
 async def _convert_admin_list(message: Message):
@@ -61,4 +62,4 @@ async def _convert_admin_list(message: Message):
         try:
             valid_result.append(int(admin))
         except ValueError:
-            await message.answer(f'Ошибка {admin}. id админа должен быть числом.')
+            await message.answer(f'Ошибка {admin}. id админа должен быть числом.', reply_markup=menu_kb)
