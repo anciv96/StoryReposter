@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 
-from config.config import OWNER
+from config.config import OWNER, ConfigManager
 from config.dispatcher import bot
 
 
@@ -12,7 +12,13 @@ class TelegramHandler(logging.Handler):
 
     async def emit(self, record):
         log_entry = str(self.format(record))
+        admins = await ConfigManager.get_setting('admins_ids')
         await bot.send_message(chat_id=OWNER, text=log_entry, parse_mode=None)
+        for admin in admins:
+            try:
+                await bot.send_message(chat_id=admin, text=log_entry, parse_mode=None)
+            except Exception:
+                continue
 
     def handle(self, record):
         asyncio.create_task(self.emit(record))

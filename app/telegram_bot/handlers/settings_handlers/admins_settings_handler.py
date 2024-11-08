@@ -7,7 +7,7 @@ from app import logger_setup
 from app.telegram_bot.filters.admin_filter import IsAdminFilter
 from app.telegram_bot.keyboards.default.settings_keyboard import cancel_kb
 from app.telegram_bot.states.settings_state import AdminsListState
-from config.config import ConfigManager
+from config.config import ConfigManager, OWNER
 
 logger = logger_setup.get_logger(__name__)
 admins_list_router = Router(name=__name__)
@@ -20,11 +20,12 @@ admins_list_router = Router(name=__name__)
     )
 )
 async def show_admins_list_handler(message: Message) -> None:
-    message_text = f'Админы: \n'
-    admins = await ConfigManager.get_setting('admins_ids')
-    for admin in admins:
-        message_text += f'{admin}\n'
-    await message.answer(message_text)
+    if message.from_user.id == OWNER:
+        message_text = f'Админы: \n'
+        admins = await ConfigManager.get_setting('admins_ids')
+        for admin in admins:
+            message_text += f'{admin}\n'
+        await message.answer(message_text)
 
 
 @admins_list_router.message(
@@ -34,9 +35,10 @@ async def show_admins_list_handler(message: Message) -> None:
     )
 )
 async def change_admins_list_handler(message: Message, state: FSMContext) -> None:
-    await message.answer('Введите список админов через 1 пробел (старые админы будут удалены):',
-                         reply_markup=cancel_kb)
-    await state.set_state(AdminsListState.admins)
+    if message.from_user.id == OWNER:
+        await message.answer('Введите список админов через 1 пробел (старые админы будут удалены):',
+                             reply_markup=cancel_kb)
+        await state.set_state(AdminsListState.admins)
 
 
 @admins_list_router.message(AdminsListState.admins)
