@@ -57,7 +57,6 @@ class DownloadStoryService(StoryService):
             finally:
                 await client.disconnect()
 
-
         else:
             raise NotAuthenticatedError()
 
