@@ -1,3 +1,4 @@
+import asyncio
 import os
 
 from telethon import TelegramClient
@@ -9,56 +10,57 @@ from app.backend.schemas.account import Account
 from app.backend.services.story_services.story_service import StoryService
 from app.exceptions.account_exceptions import NotAuthenticatedError
 from app.exceptions.story_exceptions import NoActiveStoryError
-from config.config import SESSIONS_UPLOAD_DIR, LAST_STORY_CONTENT_DIR
-
+from config.config import LAST_STORY_CONTENT_DIR
 
 logger = logger_setup.get_logger(__name__)
 
 
 class DownloadStoryService(StoryService):
-    async def download_last_story(self, target_account: str, account: Account) -> tuple[str, str]:
+    async def download_last_story(self, target_account: str, account: Account, proxy=None) -> tuple[str, str]:
         """
         Downloads the latest story from the target account.
 
         :param target_account: The username or ID of the target account to download the story from.
         :param account: The account instance that will be used to download the story.
+        :param proxy: Proxy.
         :return: A tuple containing the path to the downloaded media and the type ('photo' or 'video').
         :raises NoActiveStoryError: If there are no active stories.
         """
         client = TelegramClient(account.session_file, account.app_id, account.app_hash, system_version="IOS 14",
-                                device_model="iPhone 14")
-        await client.connect()
+                                device_model="iPhone 14", proxy=proxy)
+        try:
+            await asyncio.sleep(1)
+            await client.start()
 
-        if await client.is_user_authorized():
-            try:
-                target_entity = await client.get_entity(target_account)
-                peer_stories = await client(GetPeerStoriesRequest(peer=target_entity))
+            if not await client.is_user_authorized():
+                raise NotAuthenticatedError()
 
-                if not peer_stories.stories:
-                    raise NoActiveStoryError("No active stories found for the target account.")
+            target_entity = await client.get_entity(target_account)
+            peer_stories = await client(GetPeerStoriesRequest(peer=target_entity))
 
-                last_story = peer_stories.stories.stories[-1]
-                media = last_story.media
+            if not peer_stories.stories:
+                raise NoActiveStoryError("No active stories found for the target account.")
 
-                if isinstance(media, MessageMediaPhoto):
-                    media_path = self._generate_media_path(target_account, 'jpg')
-                    media_type = 'photo'
-                elif isinstance(media, MessageMediaDocument):
-                    media_path = self._generate_media_path(target_account, 'mp4')
-                    media_type = 'video'
-                else:
-                    raise TypeError("Unsupported media type in story.")
+            last_story = peer_stories.stories.stories[-1]
+            media = last_story.media
 
-                await client.download_media(media, media_path)
+            if isinstance(media, MessageMediaPhoto):
+                media_path = self._generate_media_path(target_account, 'jpg')
+                media_type = 'photo'
+            elif isinstance(media, MessageMediaDocument):
+                media_path = self._generate_media_path(target_account, 'mp4')
+                media_type = 'video'
+            else:
+                raise TypeError("Unsupported media type in story.")
 
-                return media_path, media_type
-            except Exception as error:
-                logger.error(error)
-            finally:
-                await client.disconnect()
+            await client.download_media(media, media_path)
 
-        else:
-            raise NotAuthenticatedError()
+            return media_path, media_type
+
+        except Exception as error:
+            logger.error(error)
+        finally:
+            await client.disconnect()
 
     def _generate_media_path(self, account_name: str, extension: str) -> str:
         """

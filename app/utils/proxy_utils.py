@@ -53,8 +53,6 @@ async def parse_proxy() -> Optional[list[dict[str, Any]]]:
 
 async def add_proxy(proxy: str):
     try:
-        await convert_proxy(proxy)
-
         file_path = await get_txt_file_or_create(PROXIES_UPLOAD_DIR, 'proxies.txt')
 
         async with aiofiles.open(file_path, mode='a') as f:

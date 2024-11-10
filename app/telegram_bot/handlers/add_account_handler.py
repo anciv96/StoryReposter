@@ -1,5 +1,4 @@
 import asyncio
-from contextlib import suppress
 from typing import Optional, Any
 
 from aiogram import Router, F
@@ -15,7 +14,7 @@ from app.telegram_bot.filters.admin_filter import IsAdminFilter
 from app.telegram_bot.keyboards.default.account_keyboard import minus_kb
 from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from app.telegram_bot.states.add_account_state import AddAccountState
-from app.utils.proxy_utils import add_proxy
+from app.utils.proxy_utils import add_proxy, convert_proxy
 
 add_account_router = Router(name=__name__)
 logger = logger_setup.get_logger(__name__)
@@ -72,7 +71,16 @@ async def process_proxy(message: Message, state: FSMContext):
     """
     Processes the proxy settings, creates a Telegram client, and requests the authorization code.
     """
-    client_data = await _get_client(message, state)
+    try:
+        proxy_input = message.text
+        proxy = await _get_proxy(proxy_input)
+        await state.update_data(proxy=proxy)
+    except ProxyIsNotValidError:
+        await state.clear()
+        return
+
+    user_data = await state.get_data()
+    client_data = await _create_client(user_data)
     if client_data is None:
         await state.clear()
         return
@@ -86,35 +94,37 @@ async def process_proxy(message: Message, state: FSMContext):
     await state.set_state(AddAccountState.code)
 
 
-async def _get_client(message: Message, state: FSMContext) -> Optional[tuple[Any, Any]]:
-    try:
-        user_data = await state.get_data()
-        await _add_proxy(message)
+async def _get_proxy(proxy_input) -> Optional[dict]:
+    if proxy_input == '-':
+        return None
+    else:
+        proxy = await convert_proxy(proxy_input)
+        await add_proxy(proxy_input)
+        return proxy
 
+
+async def _create_client(user_data: dict) -> Optional[tuple[Any, Any]]:
+    try:
         client, phone_code_hash = await AccountService.create_client(
-            phone=user_data['phone'],
-            app_id=int(user_data['app_id']),
-            app_hash=user_data['app_hash'],
+            phone=user_data.get('phone'),
+            app_id=int(user_data.get('app_id')),
+            app_hash=user_data.get('app_hash'),
         )
         return client, phone_code_hash
     except ValueError:
         logger.error('Ошибка: app_id должен быть целым числом')
-        await message.answer("Ошибка: app_id должен быть целым числом.")
+        if client:
+            await client.disconnect()
     except PhoneNumberIsNotValidError:
         logger.error('Номер не найден')
-        await message.answer("Номер телефона не найден. Проверьте номер и попробуйте снова.")
+        if client:
+            await client.disconnect()
     except Exception as error:
         logger.error(f'Ошибка: что-то пошло не так: {error}')
-        await message.answer("Произошла неизвестная ошибка. Попробуйте позже.")
+        if client:
+            await client.disconnect()
 
     return None
-
-
-async def _add_proxy(message: Message):
-    proxy = message.text
-    with suppress(ProxyIsNotValidError):
-        if proxy != '-':
-            await add_proxy(proxy)
 
 
 @add_account_router.message(AddAccountState.code)
@@ -124,20 +134,21 @@ async def process_code(message: Message, state: FSMContext):
     Requests 2FA password if necessary.
     """
     user_data = await state.get_data()
-    print(user_data)
     code = message.text.replace(' ', '')
     client = user_data['client']
     try:
         await AccountService.sign_in(client=client,
                                      phone=user_data['phone'],
                                      code=code,
-                                     phone_code_hash=user_data['phone_code_hash'])
+                                     phone_code_hash=user_data['phone_code_hash'],
+                                     )
         await message.answer("Аккаунт успешно добавлен!", reply_markup=menu_kb)
     except SessionPasswordNeededError:
         await message.answer("Введите пароль 2FA.", reply_markup=menu_kb)
         await state.set_state(AddAccountState.two_fa_password)
     except Exception as e:
         logger.error(f"Ошибка при авторизации: {e}")
+        await client.disconnect()
         await message.answer("Ошибка авторизации. Проверьте введённые данные.")
 
 
@@ -156,6 +167,6 @@ async def process_two_fa_password(message: Message, state: FSMContext):
         logger.error(f"Ошибка при входе: {e}")
         await message.answer("Ошибка при входе. Проверьте пароль и попробуйте снова.")
     finally:
-        await client.disconnect()
         await asyncio.sleep(2)
+        await client.disconnect()
         await state.clear()

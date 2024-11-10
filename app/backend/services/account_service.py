@@ -9,7 +9,6 @@ from telethon import TelegramClient
 from app import logger_setup
 from app.backend.schemas.account import Account
 from app.exceptions.account_exceptions import PhoneNumberIsNotValidError
-from app.utils.proxy_utils import add_proxy
 from config.config import SESSIONS_UPLOAD_DIR
 
 
@@ -18,7 +17,6 @@ logger = logger_setup.get_logger(__name__)
 
 
 class AccountService:
-
     @staticmethod
     async def create_client(phone: str, app_id: int, app_hash: str) -> tuple:
         """
@@ -28,10 +26,13 @@ class AccountService:
         try:
             session_path = await AccountService._get_session_path(phone)
             client = TelegramClient(session_path, app_id, app_hash)
-
             await client.connect()
             model = await client.send_code_request(phone)
             return client, model.phone_code_hash
+
+        except ConnectionError as e:
+            logger.error(f"Connection error while connecting client: {e}")
+            raise
         except TypeError:
             raise PhoneNumberIsNotValidError
 
@@ -40,13 +41,18 @@ class AccountService:
         try:
             account_path = os.path.join(SESSIONS_UPLOAD_DIR, phone)
             os.makedirs(account_path, exist_ok=True)
-            session_path = os.path.join(account_path, str(phone))
+            session_path = os.path.join(account_path, str(phone) + '.session')
             return session_path
         except Exception as error:
             logger.error(error)
 
     @staticmethod
-    async def sign_in(client: TelegramClient, phone: str, code: str, phone_code_hash: str) -> None:
+    async def sign_in(
+            client: TelegramClient,
+            phone: str,
+            code: str,
+            phone_code_hash: str
+    ) -> None:
         """
         Signs in the user using the provided code.
         """
@@ -59,9 +65,7 @@ class AccountService:
         Signs in the user using their 2FA password.
         """
         await client.sign_in(password=password)
-
         phone = str(client.session.filename).split('/')[-1].replace('.session', '')
-
         await AccountService.save_login_data(phone, client.api_id, client.api_hash, client.session.filename)
 
     @staticmethod
@@ -73,7 +77,6 @@ class AccountService:
         account_path = os.path.dirname(session_file).replace('.session', '')
         json_path = os.path.join(account_path, f"{phone}.json")
 
-        # Create an Account instance and save it to JSON
         account = Account(
             session_file=phone,
             phone=phone,
@@ -102,12 +105,14 @@ class AccountService:
 
                         base_name = os.path.splitext(file)[0]
                         session_file = os.path.join(root, f"{base_name}.session")
+                        print(session_file)
 
                         if not os.path.isfile(session_file):
                             continue
 
                         with open(json_path, 'r') as json_file:
                             account_data = json.load(json_file)
+                            print(account_data)
 
                             account = Account(
                                 session_file=session_file,

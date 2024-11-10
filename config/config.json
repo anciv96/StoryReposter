@@ -1,11 +1,10 @@
 {
     "turned_on": false,
     "admins_ids": [
-        123,
-        238558039
+        123
     ],
-    "items_per_page": 2,
+    "items_per_page": 1,
     "story_period": 48,
-    "posting_delay": 10,
-    "tags_per_story": 3
+    "posting_delay": 5,
+    "tags_per_story": 5
 }

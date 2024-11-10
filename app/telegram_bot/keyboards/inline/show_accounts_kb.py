@@ -44,7 +44,7 @@ async def _add_navigation_buttons(accounts: list[Account], page: int, end: int) 
         navigation_buttons.append(
             InlineKeyboardButton(
                 text="⏮️",
-                callback_data=MyCallback(action="first", page=page, account_id=0).pack()
+                callback_data=MyCallback(action="first", page=page, account_id='0').pack()
 
             )
         )
@@ -53,7 +53,7 @@ async def _add_navigation_buttons(accounts: list[Account], page: int, end: int) 
         navigation_buttons.append(
             InlineKeyboardButton(
                 text="⬅️",
-                callback_data=MyCallback(action="prev", page=page, account_id=0).pack()
+                callback_data=MyCallback(action="prev", page=page, account_id='0').pack()
 
             )
         )

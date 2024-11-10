@@ -3,8 +3,5 @@ from abc import ABC
 
 class StoryService(ABC):
     """
-    Сервис для управления публикацией сторис и массовыми отметками пользователей.
-
-    Реализует функции для публикации сторис на загруженных аккаунтах и добавления
-    отметок в соответствии с заданными параметрами.
+    Service for managing the publication of storis and mass marking of users.
     """

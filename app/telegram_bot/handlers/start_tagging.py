@@ -1,5 +1,4 @@
 import asyncio
-from typing import Optional, Any
 
 from aiogram import Router, F
 from aiogram.filters import Command, or_f, and_f
@@ -48,62 +47,81 @@ async def set_donor_account(message: Message, state: FSMContext):
 async def start_tagging_process(message: Message, donor_account):
     await AccountService.clear_cache()
     sessions = await AccountService.get_all_accounts()
+    proxy_groups = await parse_proxy()
+
     if len(sessions) == 0:
         await message.answer('Нет активных пользователей.')
         return
 
     try:
+        pass
         service = DownloadStoryService()
         await clear_directory(LAST_STORY_CONTENT_DIR)
-        await service.download_last_story(donor_account, sessions[0])
+        await service.download_last_story(donor_account,
+                                          sessions[0],
+                                          proxy=None if proxy_groups is None else proxy_groups[0])
     except NoActiveStoryError:
         await message.answer('У пользователя нет активных историй.')
         return
+    except NotAuthenticatedError:
+        await message.answer(f'Ошибка скачивания сторис. {sessions[0].phone}')
+        return
     except ValueError:
         await message.answer(f'Пользователь {donor_account} не найден')
-        return
-    except NotAuthenticatedError:
-        await message.answer(f'{sessions[0].phone} запрашивает код подтверждения')
         return
 
     await message.reply(f"Аккаунт-донор успешно добавлен: {donor_account}",)
 
     await message.reply("Запуск процесса теггинга...", reply_markup=menu_kb)
-    await post_stories_for_all_sessions(sessions)
+    await post_stories_for_all_sessions(sessions, proxy_groups)
 
 
-async def post_stories_for_all_sessions(sessions: list[Account]) -> None:
+async def post_stories_for_all_sessions(sessions: list[Account], proxy_groups) -> None:
     try:
         usernames = await get_usernames(USERNAMES_LIST_DIR)
-        proxy_groups = await _get_proxy_group(sessions)
 
-        story_service = PostStoryService()
-        tasks = [
-            story_service.post_story_with_tags(
-                session,
-                story=await get_first_media_file(),
-                tags=usernames,
-                proxy=None if proxy_groups is None else proxy_groups[i],
-            )
-            for i, session in enumerate(sessions)
-        ]
+        grouped_by_proxy = {}
+        for i, session in enumerate(sessions):
+            proxy = proxy_groups[i % len(proxy_groups)] if proxy_groups else None
+            proxy_key = (proxy["addr"], proxy["port"]) if proxy else "no_proxy"
 
-        await asyncio.gather(*  tasks)
+            if proxy_key not in grouped_by_proxy:
+                grouped_by_proxy[proxy_key] = []
+            grouped_by_proxy[proxy_key].append((session, proxy))
+
+        tasks = []
+        for proxy_key, group in grouped_by_proxy.items():
+            task = asyncio.create_task(post_stories_for_sessions_with_proxy(group, usernames))
+            tasks.append(task)
+
+        await asyncio.gather(*tasks)
+
     except FileNotFoundError:
         logger.error('Файл с юзернеймами не найден')
     except Exception as error:
-        logger.error(error)
+        logger.error(f"Произошла ошибка: {error}")
 
 
-async def _get_proxy_group(sessions) -> Optional[list[dict[str, Any]]]:
+async def post_stories_for_sessions_with_proxy(group, usernames):
+    story_service = PostStoryService()
     try:
-        proxies = await parse_proxy()
-        proxy_count = len(proxies)
-        if proxy_count == 0:
-            return None
-        return [proxies[i % proxy_count] for i in range(len(sessions))]
-    except (TypeError, ZeroDivisionError, FileNotFoundError):
-        return None
+        tasks = []
+        for session, proxy in group:
+            task = story_service.post_story_with_tags(
+                session,
+                story=await get_first_media_file(),
+                tags=usernames,
+                proxy=proxy
+            )
+            tasks.append(task)
+
+        for task in tasks:
+            turned_on = await ConfigManager.get_setting('turned_on')
+            if not turned_on:
+                return
+
+            await task
+            await asyncio.sleep(2)
+
     except Exception as error:
-        logger.error(error)
-        return None
+        logger.error(f"Ошибка при обработке сессий с прокси: {error}")

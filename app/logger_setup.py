@@ -38,12 +38,12 @@ def get_logger(name: str) -> logging.Logger:
 
     # Обработчик для файла
     file_handler = logging.FileHandler('error.log')
-    file_handler.setLevel(logging.WARNING)
+    file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(logging.Formatter(formatter))
 
     # Telegram-обработчик
     telegram_handler = TelegramHandler()
-    telegram_handler.setLevel(logging.ERROR)
+    telegram_handler.setLevel(logging.INFO)
     file_handler.setFormatter(logging.Formatter(formatter))
 
     # Добавляем обработчики в логгер

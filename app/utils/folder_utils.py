@@ -84,9 +84,16 @@ async def get_usernames(directory: str) -> list[str]:
     return []
 
 
-async def delete_directory(directory_path: str) -> None:
-    """Deletes the directory"""
-    shutil.rmtree(directory_path)
+async def delete_directory(directory_path):
+    if not os.path.exists(directory_path):
+        return
+
+    try:
+        shutil.rmtree(directory_path)
+    except FileNotFoundError:
+        pass
+    except Exception as e:
+        print(f"Произошла непредвиденная ошибка при удалении {directory_path}: {e}")
 
 
 async def extract_zip_file(zip_path):
@@ -107,7 +114,7 @@ async def get_first_media_file(directory: str = LAST_STORY_CONTENT_DIR) -> Optio
         if media_files:
             return os.path.join(directory, media_files[0])
         else:
-            logger.error("No story files found in the directory.")
+            logger.error("Ошибка скачивания сториса")
             return None
     except FileNotFoundError:
         return None

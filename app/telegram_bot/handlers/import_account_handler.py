@@ -29,7 +29,6 @@ async def command_import_account_handler(message: Message, state: FSMContext) ->
     await AccountService.clear_cache()
     await message.answer("Пожалуйста, загрузите архив аккаунтов в формате .rar или .zip")
     await state.set_state(ImportAccount.archive_file)
-    await state.set_state(ImportAccount.archive_file)
 
 
 @import_account.message(ImportAccount.archive_file)

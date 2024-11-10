@@ -1,7 +1,7 @@
 from aiogram import F, Router
 from aiogram.filters import and_f
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message
 
 from app import logger_setup
 from app.telegram_bot.filters.admin_filter import IsAdminFilter

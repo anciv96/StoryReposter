@@ -1,16 +1,14 @@
-import os
-
 from aiogram import Router, F
 from aiogram.filters import Command, or_f, and_f
 from aiogram.types import Message, CallbackQuery
 
 from app import logger_setup
-from app.backend.schemas.account import Account
 from app.backend.services.account_service import AccountService
 from app.telegram_bot.filters.admin_filter import IsAdminFilter
 from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from app.telegram_bot.keyboards.inline.show_accounts_kb import get_accounts_keyboard, MyCallback
-from config.config import ConfigManager
+from app.utils.folder_utils import delete_directory
+from config.config import ConfigManager, SESSIONS_UPLOAD_DIR
 
 show_accounts = Router(name=__name__)
 logger = logger_setup.get_logger(__name__)
@@ -25,6 +23,7 @@ logger = logger_setup.get_logger(__name__)
 ))
 async def command_show_accounts_handler(message: Message) -> None:
     try:
+        await AccountService.clear_cache()
         accounts = await AccountService.get_all_accounts()
         if len(accounts) > 0:
             await message.answer("Добавленные аккаунты. Чтобы удалить, нажмите на кнопку с номером",
@@ -42,10 +41,8 @@ async def handle_pagination(callback_query: CallbackQuery, callback_data: MyCall
     account_phone = callback_data.account_id
     accounts = await AccountService.get_all_accounts()
 
-    account_path = await _get_account_path(accounts, account_phone)
-
     if action == "delete":
-        os.remove(account_path)
+        await delete_directory(f'{SESSIONS_UPLOAD_DIR}/{account_phone}')
         await AccountService.clear_cache()
         await callback_query.message.edit_reply_markup()
     elif action == "first":
@@ -58,10 +55,3 @@ async def handle_pagination(callback_query: CallbackQuery, callback_data: MyCall
         await callback_query.message.edit_reply_markup(
             reply_markup=await get_accounts_keyboard((len(accounts) - 1) // await ConfigManager.get_setting('items_per_page'))
         )
-
-
-async def _get_account_path(accounts: list[Account], account_phone: str):
-
-    for account in accounts:
-        if account.phone == account_phone:
-            return account.session_file

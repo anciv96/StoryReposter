@@ -1,7 +1,5 @@
 import asyncio
 
-from aiogram.types import ErrorEvent
-
 from app.telegram_bot.handlers.settings_handlers.admins_settings_handler import admins_list_router
 from app.telegram_bot.handlers.stop_tagging import stop_tagging_router
 from config.dispatcher import dp, bot
