@@ -62,7 +62,7 @@ async def _add_navigation_buttons(accounts: list[Account], page: int, end: int) 
         navigation_buttons.append(
             InlineKeyboardButton(
                 text=f"{page}/{(len(accounts) - 1) // await ConfigManager.get_setting('items_per_page')}",
-                callback_data=MyCallback(action="", page=page, account_id=0).pack()
+                callback_data=MyCallback(action="", page=page, account_id='0').pack()
 
             )
         )
@@ -71,7 +71,7 @@ async def _add_navigation_buttons(accounts: list[Account], page: int, end: int) 
         navigation_buttons.append(
             InlineKeyboardButton(
                 text="➡️",
-                callback_data=MyCallback(action="next", page=page, account_id=0).pack()
+                callback_data=MyCallback(action="next", page=page, account_id='0').pack()
 
             )
         )
@@ -79,7 +79,7 @@ async def _add_navigation_buttons(accounts: list[Account], page: int, end: int) 
         navigation_buttons.append(
             InlineKeyboardButton(
                 text="⏭️",
-                callback_data=MyCallback(action="last", page=len(accounts) - 1, account_id=0).pack()
+                callback_data=MyCallback(action="last", page=len(accounts) - 1, account_id='0').pack()
 
             )
         )

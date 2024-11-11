@@ -7,7 +7,7 @@ from app import logger_setup
 from app.telegram_bot.filters.admin_filter import IsAdminFilter
 from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from app.telegram_bot.states.add_usernames_list_state import AddUsernamesState
-from app.utils.folder_utils import download_file
+from app.utils.folder_utils import download_file, clear_directory
 from config.config import USERNAMES_LIST_DIR
 
 add_usernames_router = Router(name=__name__)
@@ -47,6 +47,7 @@ async def handle_usernames_file(message: Message, state: FSMContext):
         return
 
     try:
+        await clear_directory(USERNAMES_LIST_DIR)
         file_path = await download_file(message, USERNAMES_LIST_DIR)
         usernames_count = await process_usernames_file(file_path)
 
