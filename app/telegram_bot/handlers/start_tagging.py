@@ -49,7 +49,11 @@ async def set_donor_account(message: Message, state: FSMContext):
 async def start_tagging_process(message: Message, donor_account):
     await AccountService.clear_cache()
     sessions = await AccountService.get_all_accounts()
-    proxy_groups = await parse_proxy()
+    try:
+        proxy_groups = await parse_proxy()
+    except FileNotFoundError:
+        await message.answer('Прокси не найдены. ')
+        return
 
     if len(sessions) == 0:
         await message.answer('Нет активных пользователей.')
