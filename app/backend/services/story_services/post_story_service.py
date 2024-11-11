@@ -82,7 +82,7 @@ class PostStoryService(StoryService):
                         media=types.InputMediaUploadedPhoto(
                             file=media
                         ),
-                        privacy_rules=[types.InputPrivacyValueAllowContacts()],
+                        privacy_rules=[types.InputPrivacyValueAllowAll()],
                         caption=caption,
                         period=await ConfigManager.get_setting('story_period') * 3600
                     ))
@@ -94,7 +94,7 @@ class PostStoryService(StoryService):
                         media=types.InputMediaUploadedPhoto(
                             file=media
                         ),
-                        privacy_rules=[types.InputPrivacyValueAllowContacts()],
+                        privacy_rules=[types.InputPrivacyValueAllowAll()],
                         caption=caption,
                     ))
                     logger.info(f'Отмечено {caption} аккаунтом {account.phone} (прокси: {proxy})')

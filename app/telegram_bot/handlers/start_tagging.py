@@ -18,7 +18,7 @@ from app.telegram_bot.filters.admin_filter import IsAdminFilter
 from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from app.telegram_bot.states.start_tagging_state import StartTaggingState
 from app.utils.folder_utils import get_usernames, clear_directory, get_first_media_file
-from app.utils.proxy_utils import parse_proxy
+from app.utils.proxy_utils import parse_proxy, convert_proxy
 from config.config import USERNAMES_LIST_DIR, LAST_STORY_CONTENT_DIR, ConfigManager
 
 start_tagging_router = Router(name=__name__)
@@ -51,6 +51,10 @@ async def start_tagging_process(message: Message, donor_account):
     sessions = await AccountService.get_all_accounts()
     try:
         proxy_groups = await parse_proxy()
+        proxy = None
+        if proxy_groups:
+            proxy = proxy_groups[0]
+
     except FileNotFoundError:
         await message.answer('Прокси не найдены. ')
         return
@@ -65,7 +69,8 @@ async def start_tagging_process(message: Message, donor_account):
         await clear_directory(LAST_STORY_CONTENT_DIR)
         await service.download_last_story(donor_account,
                                           sessions[0],
-                                          proxy=None if proxy_groups is None else proxy_groups[0])
+                                          proxy=proxy,
+                                          )
     except NoActiveStoryError:
         await message.answer('У пользователя нет активных историй.')
         return

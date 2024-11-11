@@ -2,6 +2,7 @@ import asyncio
 
 from app.telegram_bot.handlers.settings_handlers.admins_settings_handler import admins_list_router
 from app.telegram_bot.handlers.stop_tagging import stop_tagging_router
+from app.utils.proxy_utils import parse_proxy
 from config.dispatcher import dp, bot
 from app import logger_setup
 from app.telegram_bot.handlers.add_account_handler import add_account_router
