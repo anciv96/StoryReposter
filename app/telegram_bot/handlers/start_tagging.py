@@ -1,3 +1,5 @@
+from random import uniform
+
 import asyncio
 
 from aiogram import Router, F
@@ -121,7 +123,7 @@ async def post_stories_for_sessions_with_proxy(group, usernames):
                 return
 
             await task
-            await asyncio.sleep(2)
+            await asyncio.sleep(uniform(5, 6))
 
     except Exception as error:
         logger.error(f"Ошибка при обработке сессий с прокси: {error}")

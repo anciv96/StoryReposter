@@ -56,6 +56,6 @@ async def add_proxy(proxy: str):
         file_path = await get_txt_file_or_create(PROXIES_UPLOAD_DIR, 'proxies.txt')
 
         async with aiofiles.open(file_path, mode='a') as f:
-            await f.write(f"{proxy}\n")
+            await f.write(f"\n{proxy}\n")
     except Exception as error:
         logger.error(error)

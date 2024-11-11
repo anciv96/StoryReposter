@@ -30,10 +30,10 @@ class DownloadStoryService(StoryService):
                                 device_model="iPhone 14", proxy=proxy)
         try:
             await asyncio.sleep(1)
-            await client.start()
+            await client.connect()
 
             if not await client.is_user_authorized():
-                raise NotAuthenticatedError()
+                raise NotAuthenticatedError('Client is not authenticated')
 
             target_entity = await client.get_entity(target_account)
             peer_stories = await client(GetPeerStoriesRequest(peer=target_entity))

@@ -33,27 +33,33 @@ async def command_import_account_handler(message: Message, state: FSMContext) ->
 
 @import_account.message(ImportAccount.archive_file)
 async def get_file_handler(message: Message, state: FSMContext) -> None:
-    file_name = message.document.file_name
-    if message.document is None:
+    try:
+        if message.document is None:
+            await state.clear()
+            await message.answer('Ошибка: Поддерживаются только ZIP и RAR файлы.')
+            return
+        file_name = message.document.file_name
+
+        file_path = os.path.join(SESSIONS_UPLOAD_DIR, file_name)
+
+        if file_name.endswith('.rar') or file_name.endswith('.zip'):
+            await clear_directory(SESSIONS_UPLOAD_DIR)
+            await download_file(message, SESSIONS_UPLOAD_DIR)
+            await _extract_archive_file(message, file_path)
+
+            await message.answer('Пожалуйста, загрузите .txt-файл с прокси в формата soaks5 ввиде '
+                                 'api:port:login:password.'
+                                 'Если прокси отсутствуют, то поставьте -. Каждая прокси должна вводится с отдельной '
+                                 'строки'
+                                 'без разделителей в конце строки.', reply_markup=minus_kb)
+            await state.set_state(ImportAccount.proxy_file)
+        else:
+            await message.answer('Отмена импорта...')
+            await message.reply("Неизвестный формат архива. Поддерживаются только ZIP и RAR.", reply_markup=menu_kb)
+            await state.clear()
+    except Exception as error:
         await state.clear()
-        await message.answer('Ошибка: Поддерживаются только ZIP и RAR файлы.')
-        return
-
-    file_path = os.path.join(SESSIONS_UPLOAD_DIR, file_name)
-
-    if file_name.endswith('.rar') or file_name.endswith('.zip'):
-        await clear_directory(SESSIONS_UPLOAD_DIR)
-        await download_file(message, SESSIONS_UPLOAD_DIR)
-        await _extract_archive_file(message, file_path)
-
-        await message.answer('Пожалуйста, загрузите .txt-файл с прокси в формата soaks5 ввиде api:port:login:password. '
-                             'Если прокси отсутствуют, то поставьте -. Каждая прокси должна вводится с отдельной строки'
-                             'без разделителей в конце строки.', reply_markup=minus_kb)
-        await state.set_state(ImportAccount.proxy_file)
-    else:
-        await message.answer('Отмена импорта...')
-        await message.reply("Неизвестный формат архива. Поддерживаются только ZIP и RAR.", reply_markup=menu_kb)
-        await state.clear()
+        logger.error(error)
 
 
 async def _extract_archive_file(message: Message, file_path: str):

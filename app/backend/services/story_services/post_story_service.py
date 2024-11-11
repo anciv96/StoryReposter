@@ -1,5 +1,6 @@
 import asyncio
 from itertools import islice
+from random import uniform
 
 from telethon import TelegramClient, functions, types
 from telethon.errors import FloodWaitError, SessionPasswordNeededError
@@ -39,7 +40,8 @@ class PostStoryService(StoryService):
             await self._post_story_with_batch(client, story, batch, proxy)
 
             posting_delay = await ConfigManager.get_setting('posting_delay')
-            await asyncio.sleep(posting_delay)
+
+            await asyncio.sleep(uniform(posting_delay - 2, posting_delay + 2))
 
     async def _post_story_with_batch(self, client: Account, story, batch: list[str], proxy=None):
         try:
@@ -65,10 +67,10 @@ class PostStoryService(StoryService):
         client = TelegramClient(account.session_file, account.app_id, account.app_hash,
                                 device_model='Iphone 12 pro max', proxy=proxy)
 
-        max_retries = 5
+        max_retries = 3
         for attempt in range(max_retries):
             try:
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(uniform(1, 2))
                 await client.connect()
                 if not await client.is_user_authorized():
                     raise NotAuthenticatedError()
@@ -104,7 +106,7 @@ class PostStoryService(StoryService):
 
             except (ConnectionError, TimeoutError) as e:
                 logger.error(f"Ошибка подключения (попытка {attempt + 1}/{max_retries}): {e}")
-                await asyncio.sleep(5)
+                await asyncio.sleep(uniform(3, 6))
 
             except SessionPasswordNeededError:
                 logger.error(f"{account.phone} требует двухфакторной аутентификации.")
