@@ -36,24 +36,27 @@ async def command_show_accounts_handler(message: Message) -> None:
 
 @show_accounts.callback_query(MyCallback.filter())
 async def handle_pagination(callback_query: CallbackQuery, callback_data: MyCallback):
-    action = callback_data.action
-    page = callback_data.page
-    account_phone = callback_data.account_id
-    accounts = await AccountService.get_all_accounts()
+    try:
+        action = callback_data.action
+        page = callback_data.page
+        account_phone = callback_data.account_id
+        accounts = await AccountService.get_all_accounts()
 
-    if action == "delete":
-        await delete_directory(f'{SESSIONS_UPLOAD_DIR}/{account_phone}')
-        await delete_file_in_nested_folders(SESSIONS_UPLOAD_DIR, f'{account_phone}.json')
-        await delete_file_in_nested_folders(SESSIONS_UPLOAD_DIR, f'{account_phone}.session')
-        await AccountService.clear_cache()
-        await callback_query.message.answer(f'Аккаунт {account_phone} успешно удален!')
-    elif action == "first":
-        await callback_query.message.edit_reply_markup(reply_markup=await get_accounts_keyboard(0))
-    elif action == "prev":
-        await callback_query.message.edit_reply_markup(reply_markup=await get_accounts_keyboard(page - 1))
-    elif action == "next":
-        await callback_query.message.edit_reply_markup(reply_markup=await get_accounts_keyboard(page + 1))
-    elif action == "last":
-        await callback_query.message.edit_reply_markup(
-            reply_markup=await get_accounts_keyboard((len(accounts) - 1) // await ConfigManager.get_setting('items_per_page'))
-        )
+        if action == "delete":
+            await delete_directory(f'{SESSIONS_UPLOAD_DIR}/{account_phone}')
+            await delete_file_in_nested_folders(SESSIONS_UPLOAD_DIR, f'{account_phone}.json')
+            await delete_file_in_nested_folders(SESSIONS_UPLOAD_DIR, f'{account_phone}.session')
+            await AccountService.clear_cache()
+            await callback_query.message.answer(f'Аккаунт {account_phone} успешно удален!')
+        elif action == "first":
+            await callback_query.message.edit_reply_markup(reply_markup=await get_accounts_keyboard(0))
+        elif action == "prev":
+            await callback_query.message.edit_reply_markup(reply_markup=await get_accounts_keyboard(page - 1))
+        elif action == "next":
+            await callback_query.message.edit_reply_markup(reply_markup=await get_accounts_keyboard(page + 1))
+        elif action == "last":
+            await callback_query.message.edit_reply_markup(
+                reply_markup=await get_accounts_keyboard((len(accounts) - 1) // await ConfigManager.get_setting('items_per_page'))
+            )
+    except Exception as error:
+        logger.error(error)
