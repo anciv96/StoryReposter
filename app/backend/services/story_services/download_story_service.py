@@ -8,8 +8,9 @@ from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
 from app import logger_setup
 from app.backend.schemas.account import Account
 from app.backend.services.story_services.story_service import StoryService
-from app.exceptions.account_exceptions import NotAuthenticatedError
+from app.exceptions.account_exceptions import NotAuthenticatedError, ProxyIsNotValidError
 from app.exceptions.story_exceptions import NoActiveStoryError
+from app.utils.proxy_utils import check_proxy
 from config.config import LAST_STORY_CONTENT_DIR
 
 logger = logger_setup.get_logger(__name__)
@@ -29,6 +30,7 @@ class DownloadStoryService(StoryService):
         client = TelegramClient(account.session_file, account.app_id, account.app_hash, system_version="IOS 14",
                                 device_model="iPhone 14", proxy=proxy)
         try:
+            await check_proxy(proxy)
             await asyncio.sleep(1)
             await client.connect()
 
@@ -56,7 +58,8 @@ class DownloadStoryService(StoryService):
             await client.download_media(media, media_path)
 
             return media_path, media_type
-
+        except ProxyIsNotValidError as e:
+            logger.error(e)
         except Exception as error:
             logger.error(error)
         finally:
