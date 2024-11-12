@@ -1,6 +1,7 @@
 import os
 import shutil
 import zipfile
+from contextlib import suppress
 from typing import Optional
 
 import rarfile
@@ -67,10 +68,7 @@ async def get_usernames(directory: str) -> list[str]:
     Returns:
         List[str]: A list of usernames (e.g., ['@username1', '@username2']) or an empty list if no valid file is found.
     """
-    try:
-        file_path = await get_txt_file_path(directory)
-    except FileNotFoundError:
-        raise FileNotFoundError
+    file_path = await get_txt_file_path(directory)
 
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
@@ -87,13 +85,20 @@ async def get_usernames(directory: str) -> list[str]:
 async def delete_directory(directory_path):
     if not os.path.exists(directory_path):
         return
-
     try:
         shutil.rmtree(directory_path)
     except FileNotFoundError:
         pass
     except Exception as e:
         print(f"Произошла непредвиденная ошибка при удалении {directory_path}: {e}")
+
+
+def delete_file_in_nested_folders(root_dir, file_name):
+    for dirpath, _, filenames in os.walk(root_dir):
+        if file_name in filenames:
+            file_path = os.path.join(dirpath, file_name)
+            with suppress(FileNotFoundError):
+                os.remove(file_path)
 
 
 async def extract_zip_file(zip_path):

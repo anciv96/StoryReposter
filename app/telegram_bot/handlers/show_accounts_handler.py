@@ -7,7 +7,7 @@ from app.backend.services.account_service import AccountService
 from app.telegram_bot.filters.admin_filter import IsAdminFilter
 from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from app.telegram_bot.keyboards.inline.show_accounts_kb import get_accounts_keyboard, MyCallback
-from app.utils.folder_utils import delete_directory
+from app.utils.folder_utils import delete_directory, delete_file_in_nested_folders
 from config.config import ConfigManager, SESSIONS_UPLOAD_DIR
 
 show_accounts = Router(name=__name__)
@@ -43,6 +43,9 @@ async def handle_pagination(callback_query: CallbackQuery, callback_data: MyCall
 
     if action == "delete":
         await delete_directory(f'{SESSIONS_UPLOAD_DIR}/{account_phone}')
+        await delete_file_in_nested_folders(SESSIONS_UPLOAD_DIR, f'{account_phone}.json')
+        await delete_file_in_nested_folders(SESSIONS_UPLOAD_DIR, f'{account_phone}.session')
+
         await AccountService.clear_cache()
         await callback_query.message.edit_reply_markup()
     elif action == "first":
