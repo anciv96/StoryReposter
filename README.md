@@ -114,5 +114,5 @@ Once you've completed the setup and configuration, you can start the bot:
 
 1. Run the bot:
    ```bash
-      python3 main.py
+   python3 main.py
 2. The bot will start listening for commands and perform actions based on user input.
