@@ -11,11 +11,11 @@ start_router = Router(name=__name__)
 @start_router.message(and_f(or_f(CommandStart(), Command('menu')), IsAdminFilter(True)))
 async def command_start_handler(message: Message) -> None:
     """
-    This handler receives messages with `/start` command
+    This handler receives messages with `/start` and `/menu` command
     """
     await message.answer(
         "Добро пожаловать в бот Mass Tagger! 🤖\n\n"
-        "🔥 Основные возможности:\n"
+        "🔥 Основные возможности:\n" 
         "• Поддержка нескольких аккаунтов для эффективного тегинга\n"
         "• Умная интеграция прокси для повышенной надежности\n"
         "• Возможность массового импорта пользователей\n"

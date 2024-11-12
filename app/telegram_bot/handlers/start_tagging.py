@@ -18,7 +18,7 @@ from app.telegram_bot.filters.admin_filter import IsAdminFilter
 from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from app.telegram_bot.states.start_tagging_state import StartTaggingState
 from app.utils.folder_utils import get_usernames, clear_directory, get_first_media_file
-from app.utils.proxy_utils import parse_proxy, convert_proxy
+from app.utils.proxy_utils import parse_proxy
 from config.config import USERNAMES_LIST_DIR, LAST_STORY_CONTENT_DIR, ConfigManager
 
 start_tagging_router = Router(name=__name__)

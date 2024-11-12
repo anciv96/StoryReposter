@@ -45,9 +45,8 @@ async def handle_pagination(callback_query: CallbackQuery, callback_data: MyCall
         await delete_directory(f'{SESSIONS_UPLOAD_DIR}/{account_phone}')
         await delete_file_in_nested_folders(SESSIONS_UPLOAD_DIR, f'{account_phone}.json')
         await delete_file_in_nested_folders(SESSIONS_UPLOAD_DIR, f'{account_phone}.session')
-
         await AccountService.clear_cache()
-        await callback_query.message.edit_reply_markup()
+        await callback_query.message.answer(f'Аккаунт {account_phone} успешно удален!')
     elif action == "first":
         await callback_query.message.edit_reply_markup(reply_markup=await get_accounts_keyboard(0))
     elif action == "prev":
