@@ -43,7 +43,6 @@ async def get_file_handler(message: Message, state: FSMContext) -> None:
         file_path = os.path.join(SESSIONS_UPLOAD_DIR, file_name)
 
         if file_name.endswith('.rar') or file_name.endswith('.zip'):
-            await clear_directory(SESSIONS_UPLOAD_DIR)
             await download_file(message, SESSIONS_UPLOAD_DIR)
             await _extract_archive_file(message, file_path)
 

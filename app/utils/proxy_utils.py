@@ -1,8 +1,10 @@
-import asyncio
+import ssl
 from typing import Any, Optional
 
+import aiohttp
 import aiofiles
 import python_socks
+from aiohttp_socks import ProxyConnector
 
 from app import logger_setup
 from app.exceptions.account_exceptions import ProxyIsNotValidError
@@ -60,3 +62,26 @@ async def add_proxy(proxy: str):
             await f.write(f"\n{proxy}\n")
     except Exception as error:
         logger.error(error)
+
+
+async def check_proxy(proxy_info: dict[str, Any]) -> None:
+    if proxy_info == '':
+        return
+
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
+    async with aiohttp.ClientSession(connector=ProxyConnector(
+            proxy_type=proxy_info['proxy_type'],
+            host=proxy_info['addr'],
+            port=proxy_info['port'],
+            username=proxy_info['username'],
+            password=proxy_info['password'],
+            rdns=proxy_info['rdns'],
+            ssl=ssl_context
+    )) as session:
+        resp = await session.get("https://google.com")
+        resp.close()
+        if resp.status != 200:
+            raise ProxyIsNotValidError(f"Proxy {proxy_info['addr']} is not valid")
