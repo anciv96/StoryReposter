@@ -123,5 +123,6 @@ class PostStoryService(StoryService):
                 logger.error(f"Неизвестная ошибка: {e}")
                 break
             finally:
+                await asyncio.sleep(uniform(2, 4))
                 await client.disconnect()
 

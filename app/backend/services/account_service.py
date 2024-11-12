@@ -105,14 +105,12 @@ class AccountService:
 
                         base_name = os.path.splitext(file)[0]
                         session_file = os.path.join(root, f"{base_name}.session")
-                        print(session_file)
 
                         if not os.path.isfile(session_file):
                             continue
 
                         with open(json_path, 'r') as json_file:
                             account_data = json.load(json_file)
-                            print(account_data)
 
                             account = Account(
                                 session_file=session_file,

@@ -1,4 +1,5 @@
 import asyncio
+from random import uniform
 from typing import Optional, Any
 
 from aiogram import Router, F
@@ -143,6 +144,8 @@ async def process_code(message: Message, state: FSMContext):
                                      phone_code_hash=user_data['phone_code_hash'],
                                      )
         await message.answer("Аккаунт успешно добавлен!", reply_markup=menu_kb)
+        await asyncio.sleep(uniform(5, 7))
+        await client.disconnect()
     except SessionPasswordNeededError:
         await message.answer("Введите пароль 2FA.", reply_markup=menu_kb)
         await state.set_state(AddAccountState.two_fa_password)
@@ -167,6 +170,6 @@ async def process_two_fa_password(message: Message, state: FSMContext):
         logger.error(f"Ошибка при входе: {e}")
         await message.answer("Ошибка при входе. Проверьте пароль и попробуйте снова.")
     finally:
-        await asyncio.sleep(2)
+        await asyncio.sleep(uniform(5, 7))
         await client.disconnect()
         await state.clear()
