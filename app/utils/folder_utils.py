@@ -93,7 +93,7 @@ async def delete_directory(directory_path):
         print(f"Произошла непредвиденная ошибка при удалении {directory_path}: {e}")
 
 
-def delete_file_in_nested_folders(root_dir, file_name):
+async def delete_file_in_nested_folders(root_dir, file_name):
     for dirpath, _, filenames in os.walk(root_dir):
         if file_name in filenames:
             file_path = os.path.join(dirpath, file_name)
