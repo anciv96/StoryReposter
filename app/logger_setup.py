@@ -43,7 +43,7 @@ def get_logger(name: str) -> logging.Logger:
 
     # Telegram-обработчик
     telegram_handler = TelegramHandler()
-    telegram_handler.setLevel(logging.INFO)
+    telegram_handler.setLevel(logging.WARNING)
     file_handler.setFormatter(logging.Formatter(formatter))
 
     # Добавляем обработчики в логгер

@@ -70,7 +70,7 @@ class PostStoryService(StoryService):
 
     async def _post_story(self, account: Account, story, caption, proxy=None) -> None:
         client = TelegramClient(account.session_file, account.app_id, account.app_hash,
-                                device_model='Iphone 12 pro max', proxy=proxy)
+                                device_model='Iphone 12 Pro Max', system_version="IOS 14", proxy=proxy)
         max_retries = 3
         for attempt in range(max_retries):
             try:
@@ -90,7 +90,7 @@ class PostStoryService(StoryService):
                         caption=caption,
                         period=await ConfigManager.get_setting('story_period') * 3600
                     ))
-                    logger.info(f'Отмечено {caption} аккаунтом {account.phone} (прокси: {proxy})')
+                    logger.warning(f'Отмечено {caption} аккаунтом {account.phone} (прокси: {proxy})')
                     break
                 except Exception:
                     await client(functions.stories.SendStoryRequest(
@@ -101,7 +101,7 @@ class PostStoryService(StoryService):
                         privacy_rules=[types.InputPrivacyValueAllowAll()],
                         caption=caption,
                     ))
-                    logger.info(f'Отмечено {caption} аккаунтом {account.phone} (прокси: {proxy})')
+                    logger.warning(f'Отмечено {caption} аккаунтом {account.phone} (прокси: {proxy})')
                     break
 
             except FloodWaitError as e:

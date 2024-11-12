@@ -18,16 +18,18 @@ logger = logger_setup.get_logger(__name__)
 
 class AccountService:
     @staticmethod
-    async def create_client(phone: str, app_id: int, app_hash: str) -> tuple:
+    async def create_client(phone: str, app_id: int, app_hash: str, proxy: dict) -> tuple:
         """
         Initializes and connects a Telegram client.
         Returns the client and the phone code hash required for authorization.
         """
         try:
             session_path = await AccountService._get_session_path(phone)
-            client = TelegramClient(session_path, app_id, app_hash)
+            client = TelegramClient(session_path, app_id, app_hash, device_model='Iphone 12 Pro Max',
+                                    system_version="IOS 14", proxy=proxy)
             await client.connect()
             model = await client.send_code_request(phone)
+            logger.info(f'Send request to {phone}')
             return client, model.phone_code_hash
 
         except ConnectionError as e:

@@ -28,7 +28,7 @@ class DownloadStoryService(StoryService):
         :raises NoActiveStoryError: If there are no active stories.
         """
         client = TelegramClient(account.session_file, account.app_id, account.app_hash, system_version="IOS 14",
-                                device_model="iPhone 14", proxy=proxy)
+                                device_model="Iphone 12 Pro Max", proxy=proxy)
         try:
             await check_proxy(proxy)
             await asyncio.sleep(1)
