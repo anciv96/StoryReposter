@@ -9,3 +9,4 @@ class Account(BaseModel):
     app_id: int
     app_hash: str
     username: Optional[str] = None
+    proxy: Optional[str] = None

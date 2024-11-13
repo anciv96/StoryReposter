@@ -10,27 +10,30 @@ from app.backend.schemas.account import Account
 from app.backend.services.story_services.story_service import StoryService
 from app.exceptions.account_exceptions import NotAuthenticatedError, ProxyIsNotValidError
 from app.exceptions.story_exceptions import NoActiveStoryError
-from app.utils.proxy_utils import check_proxy
+from app.utils.proxy_utils import check_proxy, convert_proxy
 from config.config import LAST_STORY_CONTENT_DIR
 
 logger = logger_setup.get_logger(__name__)
 
 
 class DownloadStoryService(StoryService):
-    async def download_last_story(self, target_account: str, account: Account, proxy=None) -> tuple[str, str]:
+    async def download_last_story(self, target_account: str, account: Account, proxy_input: str = None) -> tuple[str, str]:
         """
         Downloads the latest story from the target account.
 
         :param target_account: The username or ID of the target account to download the story from.
         :param account: The account instance that will be used to download the story.
-        :param proxy: Proxy.
+        :param proxy_input: Proxy in format host:port:login:password.
         :return: A tuple containing the path to the downloaded media and the type ('photo' or 'video').
         :raises NoActiveStoryError: If there are no active stories.
         """
-        client = TelegramClient(account.session_file, account.app_id, account.app_hash, system_version="IOS 14",
-                                device_model="Iphone 12 Pro Max", proxy=proxy)
+        proxy = await convert_proxy(proxy_input)
+        await check_proxy(proxy)
+
+        client = TelegramClient(account.session_file, account.app_id, account.app_hash, system_version="iOS 14.4",
+                                device_model="Iphone 12 Pro Max", app_version="4.0", proxy=proxy)
+
         try:
-            await check_proxy(proxy)
             await asyncio.sleep(1)
             await client.connect()
 
@@ -58,8 +61,6 @@ class DownloadStoryService(StoryService):
             await client.download_media(media, media_path)
 
             return media_path, media_type
-        except ProxyIsNotValidError as e:
-            logger.error(e)
         except Exception as error:
             logger.error(error)
         finally:

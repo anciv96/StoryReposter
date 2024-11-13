@@ -9,6 +9,7 @@ from telethon import TelegramClient
 from app import logger_setup
 from app.backend.schemas.account import Account
 from app.exceptions.account_exceptions import PhoneNumberIsNotValidError
+from app.utils.proxy_utils import check_proxy
 from config.config import SESSIONS_UPLOAD_DIR
 
 
@@ -24,13 +25,16 @@ class AccountService:
         Returns the client and the phone code hash required for authorization.
         """
         try:
-            session_path = await AccountService._get_session_path(phone)
+            await check_proxy(proxy)
+            session_path = f'{SESSIONS_UPLOAD_DIR}/{phone}'
             client = TelegramClient(session_path, app_id, app_hash, device_model='Iphone 12 Pro Max',
-                                    system_version="IOS 14", proxy=proxy)
+                                    system_version="iOS 14.4", app_version="4.0", proxy=proxy,
+                                    )
             await client.connect()
-            model = await client.send_code_request(phone)
-            logger.info(f'Send request to {phone}')
-            return client, model.phone_code_hash
+            if not await client.is_user_authorized():
+                model = await client.send_code_request(phone)
+                logger.info(f'Send request to {phone}')
+                return client, model.phone_code_hash
 
         except ConnectionError as e:
             logger.error(f"Connection error while connecting client: {e}")
@@ -38,41 +42,44 @@ class AccountService:
         except TypeError:
             raise PhoneNumberIsNotValidError
 
-    @staticmethod
-    async def _get_session_path(phone: str):
-        try:
-            account_path = os.path.join(SESSIONS_UPLOAD_DIR, phone)
-            os.makedirs(account_path, exist_ok=True)
-            session_path = os.path.join(account_path, str(phone) + '.session')
-            return session_path
-        except Exception as error:
-            logger.error(error)
+    # @staticmethod
+    # async def _get_session_path(phone: str):
+    #     try:
+    #         account_path = os.path.join(SESSIONS_UPLOAD_DIR, phone)
+    #         os.makedirs(account_path, exist_ok=True)
+    #         session_path = os.path.join(account_path, str(phone))
+    #         return session_path
+    #     except Exception as error:
+    #         logger.error(error)
 
     @staticmethod
     async def sign_in(
             client: TelegramClient,
             phone: str,
             code: str,
-            phone_code_hash: str
+            phone_code_hash: str,
+            proxy: str = None
     ) -> None:
         """
         Signs in the user using the provided code.
         """
         await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
-        await AccountService.save_login_data(phone, client.api_id, client.api_hash, client.session.filename)
+        await AccountService.save_login_data(phone, client.api_id, client.api_hash, client.session.filename,
+                                             proxy=proxy)
 
     @staticmethod
-    async def sign_in_with_password(client: TelegramClient, password: str) -> None:
+    async def sign_in_with_password(client: TelegramClient, password: str, proxy: str) -> None:
         """
         Signs in the user using their 2FA password.
         """
         await client.sign_in(password=password)
         phone = str(client.session.filename).split('/')[-1].replace('.session', '')
-        await AccountService.save_login_data(phone, client.api_id, client.api_hash, client.session.filename)
+        await AccountService.save_login_data(phone, client.api_id, client.api_hash,
+                                             client.session.filename, proxy=proxy)
 
     @staticmethod
     async def save_login_data(phone: str, api_id: int, api_hash: str, session_file: str,
-                              username: Optional[str] = None) -> None:
+                              username: Optional[str] = None, proxy: Optional[str] = None) -> None:
         """
         Saves login details in a JSON file in the account directory, using the Account model.
         """
@@ -84,7 +91,8 @@ class AccountService:
             phone=phone,
             app_id=api_id,
             app_hash=api_hash,
-            username=username
+            username=username,
+            proxy=proxy
         )
 
         with open(json_path, 'w') as json_file:

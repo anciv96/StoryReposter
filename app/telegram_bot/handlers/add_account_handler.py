@@ -15,7 +15,7 @@ from app.telegram_bot.filters.admin_filter import IsAdminFilter
 from app.telegram_bot.keyboards.default.account_keyboard import minus_kb
 from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from app.telegram_bot.states.add_account_state import AddAccountState
-from app.utils.proxy_utils import add_proxy, convert_proxy, check_proxy
+from app.utils.proxy_utils import add_proxy, convert_proxy
 
 add_account_router = Router(name=__name__)
 logger = logger_setup.get_logger(__name__)
@@ -72,17 +72,11 @@ async def process_proxy(message: Message, state: FSMContext):
     """
     Processes the proxy settings, creates a Telegram client, and requests the authorization code.
     """
-    try:
-        proxy_input = message.text
-        proxy = await _get_proxy(proxy_input)
-        await state.update_data(proxy=proxy)
-    except ProxyIsNotValidError as error:
-        logger.error(error)
-        await state.clear()
-        return
+    proxy_input = None if message.text == '-' else message.text
+    await state.update_data(proxy_input=proxy_input)
 
     user_data = await state.get_data()
-    client_data = await _create_client(user_data, proxy)
+    client_data = await _create_client(user_data)
     if client_data is None:
         await state.clear()
         return
@@ -96,18 +90,9 @@ async def process_proxy(message: Message, state: FSMContext):
     await state.set_state(AddAccountState.code)
 
 
-async def _get_proxy(proxy_input) -> Optional[dict]:
-    if proxy_input == '-':
-        return None
-    else:
-        proxy = await convert_proxy(proxy_input)
-        await check_proxy(proxy)
-        await add_proxy(proxy_input)
-        return proxy
-
-
-async def _create_client(user_data: dict, proxy: dict) -> Optional[tuple[Any, Any]]:
+async def _create_client(user_data: dict) -> Optional[tuple[Any, Any]]:
     try:
+        proxy = await _convert_and_save_proxy(user_data)
         client, phone_code_hash = await AccountService.create_client(
             phone=user_data.get('phone'),
             app_id=int(user_data.get('app_id')),
@@ -123,12 +108,25 @@ async def _create_client(user_data: dict, proxy: dict) -> Optional[tuple[Any, An
         logger.error('Номер не найден')
         if client:
             await client.disconnect()
+    except ProxyIsNotValidError as error:
+        logger.error(error)
+        if client:
+            await client.disconnect()
     except Exception as error:
         logger.error(f'Ошибка: что-то пошло не так: {error}')
         if client:
             await client.disconnect()
 
     return None
+
+
+async def _convert_and_save_proxy(user_data) -> Optional[dict]:
+    proxy_input = user_data.get('proxy_input')
+
+    if proxy_input is not None:
+        proxy = await convert_proxy(proxy_input)
+        await add_proxy(proxy_input)
+        return proxy
 
 
 @add_account_router.message(AddAccountState.code)
@@ -141,22 +139,23 @@ async def process_code(message: Message, state: FSMContext):
     code = message.text.replace(' ', '')
     client = user_data['client']
     try:
-        await AccountService.sign_in(client=client,
-                                     phone=user_data['phone'],
-                                     code=code,
-                                     phone_code_hash=user_data['phone_code_hash'],
-                                     )
-
+        if not await client.is_user_authorized():
+            await AccountService.sign_in(
+                client,
+                phone=user_data['phone'],
+                code=code,
+                phone_code_hash=user_data['phone_code_hash'],
+                proxy=user_data['proxy_input']
+            )
         if await client.is_user_authorized():
+            await asyncio.sleep(uniform(2, 4))
             await message.answer("Аккаунт успешно добавлен!", reply_markup=menu_kb)
+            await client.disconnect()
             logger.info(f'Account {user_data["phone"]} saved successfully')
         else:
             await message.answer("Ошибка: не удалось авторизовать аккаунт.", reply_markup=menu_kb)
             logger.info('Account not saved')
-            return
 
-        await asyncio.sleep(uniform(5, 7))
-        await client.disconnect()
         await state.clear()
 
     except SessionPasswordNeededError:
@@ -177,13 +176,15 @@ async def process_two_fa_password(message: Message, state: FSMContext):
     user_data = await state.get_data()
     password = message.text
     client = user_data['client']
+    proxy = user_data['proxy_input']
     try:
-        await AccountService.sign_in_with_password(client, password=password)
+        await AccountService.sign_in_with_password(client, password=password, proxy=proxy)
+        await asyncio.sleep(uniform(2, 4))
         await message.answer("Аккаунт успешно добавлен!", reply_markup=menu_kb)
     except Exception as e:
         logger.error(f"Ошибка при входе: {e}")
         await message.answer("Ошибка при входе. Проверьте пароль и попробуйте снова.")
     finally:
-        await asyncio.sleep(uniform(4, 7))
         await client.disconnect()
+        await asyncio.sleep(2)
         await state.clear()

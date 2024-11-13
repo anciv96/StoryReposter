@@ -9,7 +9,7 @@ from app import logger_setup
 from app.backend.schemas.account import Account
 from app.backend.services.story_services.story_service import StoryService
 from app.exceptions.account_exceptions import NotAuthenticatedError, ProxyIsNotValidError
-from app.utils.proxy_utils import check_proxy
+from app.utils.proxy_utils import check_proxy, convert_proxy
 from config.config import ConfigManager
 
 logger = logger_setup.get_logger(__name__)
@@ -44,9 +44,11 @@ class PostStoryService(StoryService):
 
             await asyncio.sleep(uniform(posting_delay - 2, posting_delay + 2))
 
-    async def _post_story_with_batch(self, client: Account, story, batch: list[str], proxy=None):
+    async def _post_story_with_batch(self, client: Account, story, batch: list[str], proxy: str=None):
         try:
-            await check_proxy(proxy)
+            proxy_object = await convert_proxy(proxy)
+            await check_proxy(proxy_object)
+
             caption = await self._get_description(users_to_mention=batch)
             await self._post_story(client, story, caption, proxy)
 
@@ -68,9 +70,15 @@ class PostStoryService(StoryService):
         description = ' '.join(users_to_mention)
         return description
 
-    async def _post_story(self, account: Account, story, caption, proxy=None) -> None:
+    async def _post_story(self, account: Account, story, caption, proxy: str = None) -> None:
+        proxy_input = proxy if account.proxy is None else account.proxy
+        proxy = await convert_proxy(proxy_input)
+        await check_proxy(proxy)
+
         client = TelegramClient(account.session_file, account.app_id, account.app_hash,
-                                device_model='Iphone 12 Pro Max', system_version="IOS 14", proxy=proxy)
+                                device_model='Iphone 12 Pro Max', system_version="iOS 14.4",
+                                proxy=proxy, app_version="4.0")
+
         max_retries = 3
         for attempt in range(max_retries):
             try:
