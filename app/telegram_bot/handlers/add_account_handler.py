@@ -78,6 +78,7 @@ async def process_proxy(message: Message, state: FSMContext):
     user_data = await state.get_data()
     client_data = await _create_client(user_data)
     if client_data is None:
+        logger.info('Client data is none')
         await state.clear()
         return
 
@@ -102,20 +103,12 @@ async def _create_client(user_data: dict) -> Optional[tuple[Any, Any]]:
         return client, phone_code_hash
     except ValueError:
         logger.error('Ошибка: app_id должен быть целым числом')
-        if client:
-            await client.disconnect()
     except PhoneNumberIsNotValidError:
         logger.error('Номер не найден')
-        if client:
-            await client.disconnect()
     except ProxyIsNotValidError as error:
         logger.error(error)
-        if client:
-            await client.disconnect()
     except Exception as error:
         logger.error(f'Ошибка: что-то пошло не так: {error}')
-        if client:
-            await client.disconnect()
 
     return None
 

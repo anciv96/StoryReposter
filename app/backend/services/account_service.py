@@ -24,33 +24,30 @@ class AccountService:
         Initializes and connects a Telegram client.
         Returns the client and the phone code hash required for authorization.
         """
+        await check_proxy(proxy)
+        session_path = f'{SESSIONS_UPLOAD_DIR}/{phone}'
+        client = TelegramClient(session_path, app_id, app_hash, device_model='Iphone 12 Pro Max',
+                                system_version="iOS 14.4", app_version="4.0", proxy=proxy,
+                                )
         try:
-            await check_proxy(proxy)
-            session_path = f'{SESSIONS_UPLOAD_DIR}/{phone}'
-            client = TelegramClient(session_path, app_id, app_hash, device_model='Iphone 12 Pro Max',
-                                    system_version="iOS 14.4", app_version="4.0", proxy=proxy,
-                                    )
             await client.connect()
-            if not await client.is_user_authorized():
-                model = await client.send_code_request(phone)
-                logger.info(f'Send request to {phone}')
-                return client, model.phone_code_hash
+            model = await client.send_code_request(phone)
+            logger.info(f'Send request to {phone}')
+            return client, model.phone_code_hash
 
         except ConnectionError as e:
             logger.error(f"Connection error while connecting client: {e}")
+            if client:
+                await client.disconnect()
             raise
         except TypeError:
+            if client:
+                await client.disconnect()
             raise PhoneNumberIsNotValidError
-
-    # @staticmethod
-    # async def _get_session_path(phone: str):
-    #     try:
-    #         account_path = os.path.join(SESSIONS_UPLOAD_DIR, phone)
-    #         os.makedirs(account_path, exist_ok=True)
-    #         session_path = os.path.join(account_path, str(phone))
-    #         return session_path
-    #     except Exception as error:
-    #         logger.error(error)
+        except Exception as error:
+            if client:
+                await client.disconnect()
+            logger.error(error)
 
     @staticmethod
     async def sign_in(
