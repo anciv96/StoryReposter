@@ -4,7 +4,8 @@
         123
     ],
     "items_per_page": 1,
-    "story_period": 48,
-    "posting_delay": 15,
-    "tags_per_story": 5
+    "story_period": 24,
+    "posting_delay": 2,
+    "tags_per_story": 1,
+    "max_usernames_per_session": 2
 }

@@ -27,6 +27,8 @@ async def get_tags_handler(message: Message, state: FSMContext) -> None:
     await state.clear()
     try:
         tags_quantity = int(message.text)
+        if tags_quantity < 1:
+            raise ValueError
     except ValueError:
         await message.answer('Количество должно быть целым числом.', reply_markup=menu_kb)
         return

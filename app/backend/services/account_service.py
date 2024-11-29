@@ -26,8 +26,12 @@ class AccountService:
         """
         await check_proxy(proxy)
         session_path = f'{SESSIONS_UPLOAD_DIR}/{phone}'
-        client = TelegramClient(session_path, app_id, app_hash, device_model='Iphone 12 Pro Max',
-                                system_version="iOS 14.4", app_version="4.0", proxy=proxy,
+        client = TelegramClient(session_path,
+                                app_id,
+                                app_hash,
+                                device_model='Iphone 12 Pro Max',
+                                system_version="4.16.30-vxCUSTOM",
+                                proxy=proxy,
                                 )
         try:
             await client.connect()

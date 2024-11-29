@@ -17,3 +17,7 @@ class AdminsListState(StatesGroup):
     admins = State()
 
 
+class MaxUsernamesState(StatesGroup):
+    max_tags_quantity = State()
+
+

@@ -42,7 +42,7 @@ class PostStoryService(StoryService):
 
             posting_delay = await ConfigManager.get_setting('posting_delay')
 
-            await asyncio.sleep(uniform(posting_delay - 2, posting_delay + 2))
+            await asyncio.sleep(uniform(posting_delay - 0.5, posting_delay + 0.5))
 
     async def _post_story_with_batch(self, client: Account, story, batch: list[str], proxy: str=None):
         try:
@@ -76,8 +76,10 @@ class PostStoryService(StoryService):
         await check_proxy(proxy)
 
         client = TelegramClient(account.session_file, account.app_id, account.app_hash,
-                                device_model='Iphone 12 Pro Max', system_version="iOS 14.4",
-                                proxy=proxy, app_version="4.0")
+                                device_model='Iphone 12 Pro Max',
+                                system_version="4.16.30-vxCUSTOM",
+                                proxy=proxy,
+                                )
 
         max_retries = 3
         for attempt in range(max_retries):
@@ -133,4 +135,3 @@ class PostStoryService(StoryService):
             finally:
                 await asyncio.sleep(uniform(2, 4))
                 await client.disconnect()
-

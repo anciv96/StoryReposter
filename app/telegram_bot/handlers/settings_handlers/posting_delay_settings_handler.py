@@ -18,7 +18,8 @@ posting_delay_settings_router = Router(name=__name__)
     IsAdminFilter(True)
 ))
 async def delay_handler(message: Message, state: FSMContext) -> None:
-    await message.answer('Введите задержу между постингом сторис в секундах', reply_markup=menu_kb)
+    await message.answer('Введите задержу между постингом сторис в секундах (целое число больше 1)',
+                         reply_markup=menu_kb)
     await state.set_state(PostingDelayState.delay)
 
 
@@ -27,8 +28,10 @@ async def get_delay_handler(message: Message, state: FSMContext) -> None:
     await state.clear()
     try:
         delay = int(message.text)
+        if delay < 1:
+            raise ValueError
     except ValueError:
-        await message.answer('Задержка должна быть целым числом.', reply_markup=menu_kb)
+        await message.answer('Задержка должна быть целым числом. Больше 1', reply_markup=menu_kb)
         return
 
     await ConfigManager.set_setting(key='posting_delay', value=delay)

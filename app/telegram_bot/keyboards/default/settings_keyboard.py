@@ -13,6 +13,9 @@ settings_kb = ReplyKeyboardMarkup(
             KeyboardButton(text='Количество отметок с одного аккаунта'),
         ],
         [
+            KeyboardButton(text='Максимальное количество отметок с одного аккаунта'),
+        ],
+        [
             KeyboardButton(text='Посмотреть список админов'),
         ],
         [

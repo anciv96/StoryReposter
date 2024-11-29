@@ -68,6 +68,7 @@ async def add_proxy(proxy: str):
 
 
 async def check_proxy(proxy_info: dict[str, Any]) -> None:
+    return None
     if proxy_info == '' or proxy_info is None:
         return
 
@@ -92,4 +93,5 @@ async def check_proxy(proxy_info: dict[str, Any]) -> None:
     except ProxyIsNotValidError as error:
         logger.error(error)
     except Exception as error:
-        logger.error(error)
+        logger.error(f'Ошибка прокси {proxy_info}')
+        logger.info(error, exc_info=True)

@@ -1,6 +1,7 @@
 import asyncio
 
 from app.telegram_bot.handlers.settings_handlers.admins_settings_handler import admins_list_router
+from app.telegram_bot.handlers.settings_handlers.max_usernames_per_sessions_handler import max_usernames_router
 from app.telegram_bot.handlers.stop_tagging import stop_tagging_router
 from config.dispatcher import dp, bot
 from app import logger_setup
@@ -32,6 +33,7 @@ async def main():
     dp.include_router(settings_router)
     dp.include_router(posting_delay_settings_router)
     dp.include_router(tags_settings_router)
+    dp.include_router(max_usernames_router)
     dp.include_router(show_settings_settings_router)
     dp.include_router(admins_list_router)
     await dp.start_polling(bot)

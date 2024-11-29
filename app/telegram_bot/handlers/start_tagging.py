@@ -18,7 +18,7 @@ from app.telegram_bot.filters.admin_filter import IsAdminFilter
 from app.telegram_bot.keyboards.default.menu_keyboard import menu_kb
 from app.telegram_bot.states.start_tagging_state import StartTaggingState
 from app.utils.folder_utils import get_usernames, clear_directory, get_first_media_file
-from app.utils.proxy_utils import parse_proxy, convert_proxy
+from app.utils.proxy_utils import parse_proxy
 from config.config import USERNAMES_LIST_DIR, LAST_STORY_CONTENT_DIR, ConfigManager
 
 start_tagging_router = Router(name=__name__)
@@ -49,6 +49,7 @@ async def set_donor_account(message: Message, state: FSMContext):
 async def start_tagging_process(message: Message, donor_account):
     await AccountService.clear_cache()
     sessions = await AccountService.get_all_accounts()
+
     if len(sessions) == 0:
         await message.answer('Нет активных пользователей.')
         return
@@ -112,19 +113,45 @@ async def post_stories_for_all_sessions(sessions: list[Account], proxy_groups: l
 
 
 async def post_stories_for_sessions_with_proxy(proxy, sessions, usernames):
-    story_service = PostStoryService()
-    try:
-        for session in sessions:
-            turned_on = await ConfigManager.get_setting('turned_on')
-            if not turned_on:
-                return
-            await story_service.post_story_with_tags(
-                session,
-                story=await get_first_media_file(),
-                tags=usernames,
-                proxy=proxy
-            )
-            await asyncio.sleep(uniform(5, 6))
 
+    try:
+        grouped_usernames = await _get_grouped_usernames(usernames)
+        tasks = await _get_post_stories_tasks(proxy, sessions, grouped_usernames)
+
+        for task in asyncio.as_completed(tasks):
+            await task
+            await asyncio.sleep(uniform(0.5, 1))
+
+    except IndexError:
+        logger.error("Недостаточно юзернеймов для постинга сторис")
     except Exception as error:
         logger.error(f"Ошибка при обработке сессий с прокси: {error}")
+
+
+async def _get_grouped_usernames(usernames) -> list[list[str]]:
+    max_usernames_per_session = await ConfigManager.get_setting('max_usernames_per_session')
+
+    grouped_usernames = []
+    for i in range(0, len(usernames), max_usernames_per_session):
+        try:
+            grouped_usernames.append(usernames[i:i + max_usernames_per_session])
+        except IndexError:
+            break
+
+    return grouped_usernames
+
+
+async def _get_post_stories_tasks(proxy, sessions, usernames) -> list:
+    story_service = PostStoryService()
+
+    tasks = []
+    for i, session in enumerate(sessions):
+        tasks.append(
+            story_service.post_story_with_tags(
+                session,
+                story=await get_first_media_file(),
+                tags=usernames[i],
+                proxy=proxy
+            )
+        )
+    return tasks

@@ -8,7 +8,7 @@ from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
 from app import logger_setup
 from app.backend.schemas.account import Account
 from app.backend.services.story_services.story_service import StoryService
-from app.exceptions.account_exceptions import NotAuthenticatedError, ProxyIsNotValidError
+from app.exceptions.account_exceptions import NotAuthenticatedError
 from app.exceptions.story_exceptions import NoActiveStoryError
 from app.utils.proxy_utils import check_proxy, convert_proxy
 from config.config import LAST_STORY_CONTENT_DIR
@@ -30,8 +30,12 @@ class DownloadStoryService(StoryService):
         proxy = await convert_proxy(proxy_input)
         await check_proxy(proxy)
 
-        client = TelegramClient(account.session_file, account.app_id, account.app_hash, system_version="iOS 14.4",
-                                device_model="Iphone 12 Pro Max", app_version="4.0", proxy=proxy)
+        client = TelegramClient(account.session_file,
+                                account.app_id,
+                                account.app_hash,
+                                system_version="4.16.30-vxCUSTOM",
+                                device_model="Iphone 12 Pro Max",
+                                proxy=proxy)
 
         try:
             await asyncio.sleep(1)
