@@ -68,7 +68,6 @@ async def add_proxy(proxy: str):
 
 
 async def check_proxy(proxy_info: dict[str, Any]) -> None:
-    return None
     if proxy_info == '' or proxy_info is None:
         return
 
