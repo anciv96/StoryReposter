@@ -1,9 +1,12 @@
 import asyncio
+import os
 from itertools import islice
 from random import uniform
+from typing import Optional
 
 from telethon import TelegramClient, functions, types
 from telethon.errors import FloodWaitError, SessionPasswordNeededError
+from telethon.tl.types import InputMediaUploadedPhoto, InputMediaUploadedDocument
 
 from app import logger_setup
 from app.backend.schemas.account import Account
@@ -70,7 +73,7 @@ class PostStoryService(StoryService):
         description = ' '.join(users_to_mention)
         return description
 
-    async def _post_story(self, account: Account, story, caption, proxy: str = None) -> None:
+    async def _post_story(self, account: Account, story: str, caption, proxy: str = None) -> None:
         proxy_input = proxy if account.proxy is None else account.proxy
         proxy = await convert_proxy(proxy_input)
         await check_proxy(proxy)
@@ -89,13 +92,11 @@ class PostStoryService(StoryService):
                 if not await client.is_user_authorized():
                     raise NotAuthenticatedError()
 
-                media = await client.upload_file(story)
+                media = await _get_media_for_posting(file_path=story, client=client)
                 try:
                     await client(functions.stories.SendStoryRequest(
                         peer=await client.get_me(),
-                        media=types.InputMediaUploadedPhoto(
-                            file=media
-                        ),
+                        media=media,
                         privacy_rules=[types.InputPrivacyValueAllowAll()],
                         caption=caption,
                         period=await ConfigManager.get_setting('story_period') * 3600
@@ -105,9 +106,7 @@ class PostStoryService(StoryService):
                 except Exception:
                     await client(functions.stories.SendStoryRequest(
                         peer=await client.get_me(),
-                        media=types.InputMediaUploadedPhoto(
-                            file=media
-                        ),
+                        media=media,
                         privacy_rules=[types.InputPrivacyValueAllowAll()],
                         caption=caption,
                     ))
@@ -135,3 +134,18 @@ class PostStoryService(StoryService):
             finally:
                 await asyncio.sleep(uniform(2, 4))
                 await client.disconnect()
+
+
+async def _get_media_for_posting(file_path, client) -> Optional[InputMediaUploadedPhoto | InputMediaUploadedDocument]:
+    media = await client.upload_file(file_path)
+
+    _, file_extension = os.path.splitext(file_path)
+
+    if file_extension.lower() in ['.jpg', '.jpeg', '.png', '.gif']:
+        media_input = InputMediaUploadedPhoto(file=media)
+    elif file_extension.lower() in ['.mp4', '.mov', '.mkv']:
+        media_input = InputMediaUploadedDocument(file=media, mime_type='video/mp4', attributes=[])
+    else:
+        raise ValueError("Unsupported file type. Please use a valid photo or video in a story.")
+
+    return media_input
