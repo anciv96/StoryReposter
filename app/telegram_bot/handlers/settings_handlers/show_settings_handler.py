@@ -19,9 +19,13 @@ async def tags_handler(message: Message) -> None:
     story_period = await ConfigManager.get_setting('story_period')
     posting_delay = await ConfigManager.get_setting('posting_delay')
     tags_per_story = await ConfigManager.get_setting('tags_per_story')
+    max_usernames_per_session = await ConfigManager.get_setting('max_usernames_per_session')
 
     message_text = (f'Задержка между постингом – <b>{posting_delay}</b> секунд\n'
                     f'Время нахождения сторис в профиле -  <b>{story_period}</b> часов/часа\n'
-                    f'Количество отметок с одного аккаунта – <b>{tags_per_story}</b> отметок с одного аккаунта\n')
+                    f'Количество отметок с одного аккаунта – <b>{tags_per_story}</b> отметок с одного аккаунта\n'
+                    f'Максимальное количество отметок с одного аккаунта – <b>{max_usernames_per_session}</b> '
+                    f'отметок с одного аккаунта\n'
+                    )
 
     await message.answer(message_text, reply_markup=menu_kb)

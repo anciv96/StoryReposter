@@ -46,6 +46,9 @@ class PostStoryService(StoryService):
             posting_delay = await ConfigManager.get_setting('posting_delay')
 
             await asyncio.sleep(uniform(posting_delay - 0.5, posting_delay + 0.5))
+        else:
+            logger.warning(f'Теггинг завершен, успешно отмечено {len(tags)} пользователей аккаунтом '
+                           f'{client.phone}')
 
     async def _post_story_with_batch(self, client: Account, story, batch: list[str], proxy: str=None):
         try:
